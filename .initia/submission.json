@@ -1,0 +1,12 @@
+{
+  "project_name": "Nuansa Ship",
+  "repo_url": "https://github.com/EndPx/nuansa-ship",
+  "commit_sha": "",
+  "rollup_chain_id": "nuansa-ship-1",
+  "deployed_address": "",
+  "vm": "move",
+  "native_feature": "auto-signing",
+  "core_logic_path": "contracts/sources/battle.move",
+  "native_feature_frontend_path": "frontend/src/hooks/useAutoSign.ts",
+  "demo_video_url": ""
+}
