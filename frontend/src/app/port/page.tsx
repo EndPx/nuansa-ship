@@ -23,7 +23,7 @@ export default function PortPage() {
   const { address, username } = useInterwovenKit()
   const fleet = useFleet(address || null)
   const port = usePort(address || null)
-  const { startBattleSession } = useAutoSign()
+  const { startBattleSession, isEnabled: autoSignActive } = useAutoSign()
 
   const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
   const captainName = username ?? (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—')
@@ -39,7 +39,49 @@ export default function PortPage() {
   }
 
   return (
-    <main className="relative min-h-screen px-4 py-6 md:px-8 md:py-10">
+    <main className="relative min-h-screen px-4 py-6 md:px-8 md:py-10 overflow-hidden">
+      {/* Ambient backdrop — rhumb lines + compass watermark */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.05]">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 slow-rotate">
+          <svg width={820} height={820} viewBox="0 0 820 820">
+            <circle cx="410" cy="410" r="408" fill="none" stroke="#C8A255" strokeWidth="1" />
+            <circle cx="410" cy="410" r="320" fill="none" stroke="#C8A255" strokeWidth="0.5" />
+            <circle cx="410" cy="410" r="220" fill="none" stroke="#C8A255" strokeWidth="0.5" />
+            <circle cx="410" cy="410" r="120" fill="none" stroke="#C8A255" strokeWidth="0.5" />
+            {Array.from({ length: 32 }, (_, i) => {
+              const a = (i * Math.PI) / 16
+              return (
+                <line
+                  key={i}
+                  x1="410"
+                  y1="410"
+                  x2={410 + Math.cos(a) * 408}
+                  y2={410 + Math.sin(a) * 408}
+                  stroke="#C8A255"
+                  strokeWidth="0.4"
+                />
+              )
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Ambient lantern glows drifting */}
+      <div
+        className="absolute top-10 right-10 w-64 h-64 rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(244,162,97,0.12) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+      />
+      <div
+        className="absolute bottom-10 left-10 w-72 h-72 rounded-full pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(82,224,196,0.1) 0%, transparent 70%)',
+          filter: 'blur(30px)',
+        }}
+      />
+
       {/* Top bar */}
       <header className="flex items-center justify-between mb-6 pb-4 border-b border-[color:var(--teal-dim)]/30">
         <div className="flex items-center gap-4">
@@ -137,7 +179,20 @@ export default function PortPage() {
       {/* Bottom ticker */}
       <footer className="mt-6 pt-4 border-t border-[color:var(--teal-dim)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex justify-between">
         <span>◉ PORT.MOVE · SHIP.MOVE · CAPTAIN.MOVE · CREW.MOVE</span>
-        <span className="text-[color:var(--gold)]">AUTO-SIGN: PENDING SESSION KEY</span>
+        <span className="flex items-center gap-2">
+          <span
+            className="w-2 h-2 rounded-full animate-pulse"
+            style={{
+              background: autoSignActive ? 'var(--teal-glow)' : 'var(--gold)',
+              boxShadow: autoSignActive
+                ? '0 0 6px rgba(82,224,196,0.7)'
+                : '0 0 6px rgba(244,162,97,0.6)',
+            }}
+          />
+          <span style={{ color: autoSignActive ? 'var(--teal-glow)' : 'var(--gold)' }}>
+            {autoSignActive ? 'AUTO-SIGN: SESSION ACTIVE' : 'AUTO-SIGN: PENDING SESSION KEY'}
+          </span>
+        </span>
       </footer>
     </main>
   )

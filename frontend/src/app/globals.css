@@ -225,6 +225,37 @@ body::after {
 }
 .wave-drift { animation: wave-drift 6s linear infinite; }
 
+/* Ship drift (horizon silhouettes slowly traversing) */
+@keyframes ship-drift {
+  0%   { transform: translateX(110vw); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateX(-60vw); opacity: 0; }
+}
+.ship-drift { animation: ship-drift 45s linear infinite; }
+
+/* Map ink wash — layered paper for parchment feel */
+.ink-wash {
+  background-image:
+    radial-gradient(ellipse at 30% 20%, rgba(139, 105, 20, 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(42, 157, 143, 0.08) 0%, transparent 60%);
+}
+
+/* Wax seal press-in entrance */
+@keyframes seal-press {
+  0%   { transform: scale(1.8); opacity: 0; }
+  50%  { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.seal-press { animation: seal-press 650ms cubic-bezier(.34,1.56,.64,1) both; }
+
+/* Slow rotate for watermark compass */
+@keyframes slow-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.slow-rotate { animation: slow-rotate 90s linear infinite; }
+
 /* Fade in */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(20px); }

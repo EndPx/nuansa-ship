@@ -68,6 +68,31 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
             'radial-gradient(ellipse at 50% 140%, rgba(42,157,143,0.18) 0%, transparent 50%), radial-gradient(ellipse at 50% -20%, rgba(15,30,53,1) 0%, transparent 60%)',
         }}
       />
+
+      {/* Ambient rhumb lines radiating from center (old nautical chart) */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.08]"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+      >
+        {Array.from({ length: 16 }, (_, i) => {
+          const angle = (i * Math.PI) / 8
+          const x2 = 50 + Math.cos(angle) * 120
+          const y2 = 50 + Math.sin(angle) * 120
+          return (
+            <line
+              key={i}
+              x1="50"
+              y1="50"
+              x2={x2}
+              y2={y2}
+              stroke="#C8A255"
+              strokeWidth="0.08"
+            />
+          )
+        })}
+      </svg>
+
       {/* Drifting grid horizon */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -81,6 +106,28 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
             maskImage: 'linear-gradient(to top, black 40%, transparent 100%)',
           }}
         />
+      </div>
+
+      {/* Distant horizon ship silhouettes drifting */}
+      <div className="absolute inset-x-0 top-[34%] h-8 pointer-events-none overflow-hidden opacity-60">
+        <div className="absolute whitespace-nowrap ship-drift font-display text-[color:var(--teal-dim)] text-sm tracking-[0.4em]">
+          ◥◣&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;◣◢&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;◢◤&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;◥◣
+        </div>
+      </div>
+
+      {/* Distant harbor lights pulse */}
+      <div className="absolute inset-x-0 bottom-16 h-16 pointer-events-none flex items-center justify-around px-20 opacity-40">
+        {Array.from({ length: 7 }, (_, i) => (
+          <div
+            key={i}
+            className="w-1 h-1 rounded-full"
+            style={{
+              background: i % 2 ? 'var(--gold)' : 'var(--teal-glow)',
+              boxShadow: `0 0 8px ${i % 2 ? '#F4A261' : '#52E0C4'}`,
+              animation: `blink ${2 + (i % 3)}s ${i * 0.4}s infinite`,
+            }}
+          />
+        ))}
       </div>
 
       {/* Top tactical bar */}
