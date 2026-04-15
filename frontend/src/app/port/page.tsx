@@ -18,8 +18,14 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
 
 export default function PortPage() {
   const router = useRouter()
-  const fleet = useFleet()
-  const port = usePort()
+  // TODO: replace with real wallet address once InterwovenKit is wired
+  const address: string | null = null
+  const fleet = useFleet(address)
+  const port = usePort(address)
+
+  const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
+  const captainName = address ? 'albary.init' : '—'
+  const shipClassName = fleet.ship ? shipClasses[fleet.ship.shipClass] ?? 'Corvette' : 'Corvette'
 
   return (
     <main className="relative min-h-screen px-4 py-6 md:px-8 md:py-10">
@@ -48,23 +54,26 @@ export default function PortPage() {
         {/* ───── Left: Fleet dossier ───── */}
         <aside className="space-y-4 fade-up">
           <Panel title="◉ FLEET DOSSIER">
-            <DossierRow label="CAPTAIN" value={fleet.captainName ?? '—'} accent="gold" />
+            <DossierRow label="CAPTAIN" value={captainName} accent="gold" />
             <Stat label="LEADERSHIP" value={fleet.captain?.leadership ?? 50} max={100} />
             <Stat label="TACTICS" value={fleet.captain?.tactics ?? 50} max={100} />
             <Stat label="XP / LVL" value={`${fleet.captain?.xp ?? 0} / LV ${fleet.captain?.level ?? 1}`} />
           </Panel>
 
           <Panel title="⛵ FLAGSHIP">
-            <DossierRow label="CLASS" value={fleet.shipClassName ?? 'Corvette'} accent="teal" />
-            <Stat label="HULL" value={fleet.ship?.hull ?? 500} max={fleet.ship?.max_hull ?? 500} bar="blood" />
-            <Stat label="WEAPON" value={fleet.ship?.weapon_damage ?? 60} max={200} />
+            <DossierRow label="CLASS" value={shipClassName} accent="teal" />
+            <Stat label="HULL" value={fleet.ship?.hull ?? 500} max={fleet.ship?.maxHull ?? 500} bar="blood" />
+            <Stat label="WEAPON" value={fleet.ship?.weaponDamage ?? 60} max={200} />
             <Stat label="ENGINE" value={fleet.ship?.engine ?? 4} max={5} />
             <Stat label="ARMOR" value={fleet.ship?.armor ?? 5} max={100} />
           </Panel>
 
           <Panel title="👥 CREW ROSTER">
             <div className="space-y-2">
-              {(fleet.crew ?? [{ role: 0, hp: 100, status: 0 }]).map((c, i) => (
+              {(fleet.crew.length > 0
+                ? fleet.crew
+                : [{ role: 0, skillId: 0, morale: 50, hp: 100, status: 0 }]
+              ).map((c, i) => (
                 <CrewRow key={i} role={c.role} hp={c.hp} status={c.status} />
               ))}
             </div>
@@ -97,19 +106,19 @@ export default function PortPage() {
         {/* ───── Right: Resources + buildings ───── */}
         <aside className="space-y-4 fade-up delay-2">
           <Panel title="📜 INVENTORY">
-            <Resource icon="▬" label="Iron Planks" amount={port.inventory?.items?.find(i => i.item_type === 0)?.amount ?? 4} />
-            <Resource icon="◆" label="Steel Parts" amount={port.inventory?.items?.find(i => i.item_type === 1)?.amount ?? 2} />
-            <Resource icon="●" label="Provisions" amount={port.inventory?.items?.find(i => i.item_type === 2)?.amount ?? 6} />
-            <Resource icon="✦" label="Commander Tome" amount={port.inventory?.items?.find(i => i.item_type === 3)?.amount ?? 0} />
-            <Resource icon="▲" label="Timber" amount={port.inventory?.items?.find(i => i.item_type === 4)?.amount ?? 3} />
+            <Resource icon="▬" label="Iron Planks" amount={port.inventory?.items?.find(i => i.itemType === 0)?.amount ?? 4} />
+            <Resource icon="◆" label="Steel Parts" amount={port.inventory?.items?.find(i => i.itemType === 1)?.amount ?? 2} />
+            <Resource icon="●" label="Provisions" amount={port.inventory?.items?.find(i => i.itemType === 2)?.amount ?? 6} />
+            <Resource icon="✦" label="Commander Tome" amount={port.inventory?.items?.find(i => i.itemType === 3)?.amount ?? 0} />
+            <Resource icon="▲" label="Timber" amount={port.inventory?.items?.find(i => i.itemType === 4)?.amount ?? 3} />
           </Panel>
 
           <Panel title="🏛 FACILITIES">
-            <BuildingRow name="Shipyard" level={port.port?.shipyard_level ?? 0} />
-            <BuildingRow name="Armory" level={port.port?.armory_level ?? 0} />
-            <BuildingRow name="Barracks" level={port.port?.barracks_level ?? 0} />
-            <BuildingRow name="Admiral's Hall" level={port.port?.admirals_hall_level ?? 0} />
-            <BuildingRow name="Warehouse" level={port.port?.warehouse_level ?? 0} />
+            <BuildingRow name="Shipyard" level={port.port?.shipyardLevel ?? 0} />
+            <BuildingRow name="Armory" level={port.port?.armoryLevel ?? 0} />
+            <BuildingRow name="Barracks" level={port.port?.barracksLevel ?? 0} />
+            <BuildingRow name="Admiral's Hall" level={port.port?.admiralsHallLevel ?? 0} />
+            <BuildingRow name="Warehouse" level={port.port?.warehouseLevel ?? 0} />
           </Panel>
         </aside>
       </div>

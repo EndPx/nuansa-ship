@@ -77,15 +77,28 @@ export class BattleScene extends Phaser.Scene {
 
     // Listen for action mode changes from UIScene
     this.game.events.on('battle:setAction', (mode: ActionMode) => {
-      this.actionMode = mode
-      this.clearHighlights()
-      if (mode === 'move') this.showMoveRange()
-      else if (mode === 'attack') this.showAttackRange()
-      else if (mode === 'skill') this.showAttackRange() // skill uses same range for now
+      this.setActionMode(mode)
     })
 
     this.game.events.on('battle:endTurn', () => {
       this.endPlayerTurn()
+    })
+
+    // Bridge: React → Scene via window events
+    const onAction = (e: Event) => {
+      if (!this.isPlayerTurn) return
+      const mode = (e as CustomEvent).detail?.mode as ActionMode
+      this.setActionMode(mode)
+    }
+    const onEndTurn = () => {
+      if (!this.isPlayerTurn) return
+      this.endPlayerTurn()
+    }
+    window.addEventListener('ui:setAction', onAction)
+    window.addEventListener('ui:endTurn', onEndTurn)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener('ui:setAction', onAction)
+      window.removeEventListener('ui:endTurn', onEndTurn)
     })
 
     // Emit initial state to UIScene
@@ -96,36 +109,88 @@ export class BattleScene extends Phaser.Scene {
   private drawOceanBackground() {
     const bg = this.add.graphics()
 
-    // Deep ocean base
-    bg.fillStyle(0x0a1628, 1)
+    // Deep abyss base
+    bg.fillStyle(0x07111f, 1)
     bg.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-    // Ocean wave pattern
+    // Checkerboard ocean
     for (let row = 0; row < GRID_ROWS; row++) {
       for (let col = 0; col < GRID_COLS; col++) {
-        const shade = ((col + row) % 2 === 0) ? 0x0d1e38 : 0x0a1628
+        const shade = (col + row) % 2 === 0 ? 0x0d1e38 : 0x0a1628
         bg.fillStyle(shade, 1)
         bg.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE)
       }
     }
 
+    // Subtle radial glow at player side
+    const glow = this.add.graphics()
+    glow.fillStyle(0x2a9d8f, 0.08)
+    glow.fillCircle(TILE_SIZE * 1.5, CANVAS_HEIGHT / 2, 140)
+    // Enemy side glow
+    const redGlow = this.add.graphics()
+    redGlow.fillStyle(0xe63946, 0.06)
+    redGlow.fillCircle(TILE_SIZE * 8.5, CANVAS_HEIGHT / 2, 140)
+
     // Ocean tile overlay if available
     if (this.textures.exists('ocean-tiles')) {
       const oceanTile = this.add.image(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 'ocean-tiles')
-      oceanTile.setAlpha(0.2)
+      oceanTile.setAlpha(0.15)
       oceanTile.setDisplaySize(CANVAS_WIDTH, CANVAS_HEIGHT)
     }
+
+    // Animated water shimmer lines
+    for (let i = 0; i < 6; i++) {
+      const shimmer = this.add.graphics()
+      const y = Phaser.Math.Between(20, CANVAS_HEIGHT - 20)
+      shimmer.lineStyle(1, 0x52e0c4, 0.25)
+      shimmer.lineBetween(0, y, CANVAS_WIDTH, y)
+      shimmer.setAlpha(0)
+      this.tweens.add({
+        targets: shimmer,
+        alpha: { from: 0, to: 0.6 },
+        duration: Phaser.Math.Between(1500, 3000),
+        delay: Phaser.Math.Between(0, 2000),
+        yoyo: true,
+        repeat: -1,
+      })
+    }
+
+    // Corner brackets (tactical frame)
+    const brackets = this.add.graphics()
+    brackets.lineStyle(2, 0xc8a255, 0.7)
+    const bSize = 14
+    // TL
+    brackets.lineBetween(0, 0, bSize, 0)
+    brackets.lineBetween(0, 0, 0, bSize)
+    // TR
+    brackets.lineBetween(CANVAS_WIDTH, 0, CANVAS_WIDTH - bSize, 0)
+    brackets.lineBetween(CANVAS_WIDTH, 0, CANVAS_WIDTH, bSize)
+    // BL
+    brackets.lineBetween(0, CANVAS_HEIGHT, bSize, CANVAS_HEIGHT)
+    brackets.lineBetween(0, CANVAS_HEIGHT, 0, CANVAS_HEIGHT - bSize)
+    // BR
+    brackets.lineBetween(CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_WIDTH - bSize, CANVAS_HEIGHT)
+    brackets.lineBetween(CANVAS_WIDTH, CANVAS_HEIGHT, CANVAS_WIDTH, CANVAS_HEIGHT - bSize)
   }
 
   private drawGrid() {
     this.gridOverlay.clear()
-    this.gridOverlay.lineStyle(1, 0x2a9d8f, 0.15)
+    this.gridOverlay.lineStyle(1, 0x2a9d8f, 0.18)
 
     for (let col = 0; col <= GRID_COLS; col++) {
       this.gridOverlay.lineBetween(col * TILE_SIZE, 0, col * TILE_SIZE, CANVAS_HEIGHT)
     }
     for (let row = 0; row <= GRID_ROWS; row++) {
       this.gridOverlay.lineBetween(0, row * TILE_SIZE, CANVAS_WIDTH, row * TILE_SIZE)
+    }
+
+    // Tile coordinate markers (bottom-left of each tile)
+    const marker = this.add.graphics()
+    marker.fillStyle(0x2a9d8f, 0.3)
+    for (let col = 0; col < GRID_COLS; col++) {
+      for (let row = 0; row < GRID_ROWS; row++) {
+        marker.fillRect(col * TILE_SIZE + 2, row * TILE_SIZE + 2, 2, 2)
+      }
     }
   }
 
@@ -215,6 +280,14 @@ export class BattleScene extends Phaser.Scene {
     const color = ratio > 0.5 ? 0x44cc44 : ratio > 0.25 ? 0xcccc44 : 0xcc4444
     g.fillStyle(color, 1)
     g.fillRect(x - barWidth / 2, y, barWidth * ratio, barHeight)
+  }
+
+  private setActionMode(mode: ActionMode) {
+    this.actionMode = mode
+    this.clearHighlights()
+    if (mode === 'move') this.showMoveRange()
+    else if (mode === 'attack') this.showAttackRange()
+    else if (mode === 'skill') this.showAttackRange()
   }
 
   private handleTileClick(col: number, row: number) {
@@ -550,6 +623,23 @@ export class BattleScene extends Phaser.Scene {
       isPlayerTurn: this.isPlayerTurn,
       status: 'active',
     })
+
+    // Bridge to React HUD via window CustomEvents
+    window.dispatchEvent(
+      new CustomEvent('battle:turn', {
+        detail: { turn: this.isPlayerTurn ? 'player' : 'enemy' },
+      })
+    )
+    window.dispatchEvent(
+      new CustomEvent('battle:hp', {
+        detail: { current: this.playerHp, max: this.playerMaxHp },
+      })
+    )
+    window.dispatchEvent(
+      new CustomEvent('battle:wave', {
+        detail: { wave: this.wave },
+      })
+    )
   }
 
   private emitBattleLog(type: string, message: string) {

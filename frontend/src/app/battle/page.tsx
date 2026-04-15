@@ -100,10 +100,44 @@ export default function BattlePage() {
 
           {/* Action rail */}
           <div className="flex items-center justify-center gap-3 max-w-[640px] mx-auto">
-            <ActionBtn label="◇ MOVE" accent="teal" />
-            <ActionBtn label="⚔ ATTACK" accent="blood" />
-            <ActionBtn label="⚡ SKILL" accent="gold" />
-            <ActionBtn label="⏭ END TURN" accent="teal" />
+            <ActionBtn
+              label="◇ MOVE"
+              accent="teal"
+              disabled={turn !== 'player'}
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent('ui:setAction', { detail: { mode: 'move' } })
+                )
+              }
+            />
+            <ActionBtn
+              label="⚔ ATTACK"
+              accent="blood"
+              disabled={turn !== 'player'}
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent('ui:setAction', { detail: { mode: 'attack' } })
+                )
+              }
+            />
+            <ActionBtn
+              label="⚡ SKILL"
+              accent="gold"
+              disabled={turn !== 'player'}
+              onClick={() =>
+                window.dispatchEvent(
+                  new CustomEvent('ui:setAction', { detail: { mode: 'skill' } })
+                )
+              }
+            />
+            <ActionBtn
+              label="⏭ END TURN"
+              accent="teal"
+              disabled={turn !== 'player'}
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('ui:endTurn'))
+              }
+            />
           </div>
         </section>
 
@@ -228,9 +262,13 @@ function SkillSlot({ name, cd }: { name: string; cd: string }) {
 function ActionBtn({
   label,
   accent,
+  onClick,
+  disabled = false,
 }: {
   label: string
   accent: 'teal' | 'blood' | 'gold'
+  onClick?: () => void
+  disabled?: boolean
 }) {
   const borderMap: Record<string, string> = {
     teal: 'var(--teal)',
@@ -244,7 +282,9 @@ function ActionBtn({
   }
   return (
     <button
-      className="flex-1 font-hud tracking-[0.2em] text-base py-3 border transition-all hover:bg-[color:var(--teal-dim)]/20"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex-1 font-hud tracking-[0.2em] text-base py-3 border transition-all hover:bg-[color:var(--teal-dim)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
         borderColor: borderMap[accent],
         color: colorMap[accent],

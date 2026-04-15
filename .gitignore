@@ -12,3 +12,6 @@ claude.md
 .claude/
 .kiro/
 skills-lock.json
+.omc/
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo

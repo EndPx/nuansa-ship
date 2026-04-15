@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser'
-import { CANVAS_WIDTH, CANVAS_HEIGHT, TILE_SIZE } from '@/game/config'
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/game/config'
 
 interface BuildingConfig {
   key: string
@@ -11,180 +11,269 @@ interface BuildingConfig {
 
 export class PortScene extends Phaser.Scene {
   private buildings: Phaser.GameObjects.Container[] = []
-  private selectedBuilding: number = -1
 
   constructor() {
     super({ key: 'PortScene' })
   }
 
   create() {
-    // Draw harbor background
     this.drawHarborBackground()
+    this.drawCompassWatermark()
+    this.drawAmbientOverlay()
 
-    // Building configurations
     const buildingConfigs: BuildingConfig[] = [
-      { key: 'building-shipyard', name: 'Shipyard', type: 0, x: 96, y: 128 },
-      { key: 'building-armory', name: 'Armory', type: 1, x: 288, y: 128 },
-      { key: 'building-barracks', name: 'Barracks', type: 2, x: 480, y: 128 },
-      { key: 'building-admirals-hall', name: "Admiral's Hall", type: 3, x: 192, y: 320 },
-      { key: 'building-warehouse', name: 'Warehouse', type: 4, x: 416, y: 320 },
+      { key: 'building-shipyard', name: 'SHIPYARD', type: 0, x: 120, y: 150 },
+      { key: 'building-armory', name: 'ARMORY', type: 1, x: 320, y: 130 },
+      { key: 'building-barracks', name: 'BARRACKS', type: 2, x: 520, y: 150 },
+      { key: 'building-admirals-hall', name: "ADMIRAL'S HALL", type: 3, x: 220, y: 340 },
+      { key: 'building-warehouse', name: 'WAREHOUSE', type: 4, x: 440, y: 340 },
     ]
 
-    // Place buildings
-    buildingConfigs.forEach((config) => {
-      this.createBuilding(config)
-    })
+    buildingConfigs.forEach((config) => this.createBuilding(config))
 
-    // "Set Sail" button
-    this.createSetSailButton()
+    // Dock signal flare
+    this.drawFlare(80, CANVAS_HEIGHT - 80)
+    this.drawFlare(CANVAS_WIDTH - 80, CANVAS_HEIGHT - 80)
 
-    // Title
-    this.add.text(CANVAS_WIDTH / 2, 24, 'PORT', {
-      fontFamily: 'Inter, sans-serif',
-      fontSize: '20px',
-      fontStyle: 'bold',
+    // Scene label
+    this.add.text(CANVAS_WIDTH / 2, 28, '◊  PORT NUANSA  ◊', {
+      fontFamily: 'VT323, monospace',
+      fontSize: '18px',
+      color: '#52E0C4',
+      stroke: '#0A1628',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setAlpha(0.8)
+
+    this.add.text(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 20, 'CLICK BUILDING TO UPGRADE', {
+      fontFamily: 'VT323, monospace',
+      fontSize: '12px',
       color: '#2A9D8F',
-    }).setOrigin(0.5)
+    }).setOrigin(0.5).setAlpha(0.6)
   }
 
   private drawHarborBackground() {
-    // Ocean base
     const bg = this.add.graphics()
+
+    // Deep void base
     bg.fillStyle(0x0a1628, 1)
     bg.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-    // Harbor dock area (lighter area)
-    bg.fillStyle(0x1a2a3e, 1)
-    bg.fillRect(32, 64, CANVAS_WIDTH - 64, CANVAS_HEIGHT - 128)
+    // Water ripple tint (top band)
+    bg.fillGradientStyle(0x0a1628, 0x0a1628, 0x102840, 0x102840, 1, 1, 1, 1)
+    bg.fillRect(0, 0, CANVAS_WIDTH, 80)
 
-    // Dock border
-    bg.lineStyle(2, 0x2a9d8f, 0.4)
-    bg.strokeRect(32, 64, CANVAS_WIDTH - 64, CANVAS_HEIGHT - 128)
+    // Dock area (wooden parchment tint)
+    bg.fillStyle(0x1a2a3e, 0.9)
+    bg.fillRect(24, 80, CANVAS_WIDTH - 48, CANVAS_HEIGHT - 160)
 
-    // Draw wooden planks pattern
-    bg.lineStyle(1, 0x8b6914, 0.15)
-    for (let y = 64; y < CANVAS_HEIGHT - 64; y += 16) {
-      bg.lineBetween(32, y, CANVAS_WIDTH - 32, y)
+    // Plank lines
+    bg.lineStyle(1, 0x8b6914, 0.18)
+    for (let y = 88; y < CANVAS_HEIGHT - 80; y += 20) {
+      bg.lineBetween(24, y, CANVAS_WIDTH - 24, y)
+    }
+    for (let x = 48; x < CANVAS_WIDTH - 24; x += 120) {
+      bg.lineBetween(x, 80, x, CANVAS_HEIGHT - 80)
     }
 
-    // Harbor tile background if available
+    // Dock border (art-deco corners)
+    bg.lineStyle(2, 0x2a9d8f, 0.5)
+    bg.strokeRect(24, 80, CANVAS_WIDTH - 48, CANVAS_HEIGHT - 160)
+
+    // Corner brackets
+    const drawBracket = (x: number, y: number, dx: number, dy: number) => {
+      bg.lineStyle(3, 0xc8a255, 0.8)
+      bg.lineBetween(x, y, x + dx * 16, y)
+      bg.lineBetween(x, y, x, y + dy * 16)
+    }
+    drawBracket(24, 80, 1, 1)
+    drawBracket(CANVAS_WIDTH - 24, 80, -1, 1)
+    drawBracket(24, CANVAS_HEIGHT - 80, 1, -1)
+    drawBracket(CANVAS_WIDTH - 24, CANVAS_HEIGHT - 80, -1, -1)
+
+    // Ocean water ripples (bottom band)
+    bg.fillStyle(0x0d1e38, 1)
+    bg.fillRect(0, CANVAS_HEIGHT - 80, CANVAS_WIDTH, 80)
+    bg.lineStyle(1, 0x2a9d8f, 0.4)
+    for (let y = CANVAS_HEIGHT - 70; y < CANVAS_HEIGHT; y += 10) {
+      for (let x = 0; x < CANVAS_WIDTH; x += 40) {
+        bg.lineBetween(x, y, x + 20, y)
+      }
+    }
+
+    // Optional harbor tile overlay
     if (this.textures.exists('harbor-tiles')) {
       const harborTile = this.add.image(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 'harbor-tiles')
-      harborTile.setAlpha(0.3)
-      harborTile.setDisplaySize(CANVAS_WIDTH, CANVAS_HEIGHT)
+      harborTile.setAlpha(0.12)
+      harborTile.setDisplaySize(CANVAS_WIDTH - 48, CANVAS_HEIGHT - 160)
     }
+  }
+
+  private drawCompassWatermark() {
+    const g = this.add.graphics()
+    const cx = CANVAS_WIDTH / 2
+    const cy = CANVAS_HEIGHT / 2
+
+    g.lineStyle(1, 0xc8a255, 0.1)
+    g.strokeCircle(cx, cy, 140)
+    g.strokeCircle(cx, cy, 100)
+    g.strokeCircle(cx, cy, 60)
+
+    // Cross lines
+    g.lineStyle(1, 0x2a9d8f, 0.12)
+    g.lineBetween(cx - 150, cy, cx + 150, cy)
+    g.lineBetween(cx, cy - 150, cx, cy + 150)
+
+    // N marker
+    this.add.text(cx, cy - 150, 'N', {
+      fontFamily: 'Cinzel, serif',
+      fontSize: '16px',
+      color: '#c8a255',
+    }).setOrigin(0.5).setAlpha(0.3)
+  }
+
+  private drawAmbientOverlay() {
+    // Scanline simulation via horizontal lines
+    const scan = this.add.graphics()
+    scan.lineStyle(1, 0x52e0c4, 0.04)
+    for (let y = 0; y < CANVAS_HEIGHT; y += 3) {
+      scan.lineBetween(0, y, CANVAS_WIDTH, y)
+    }
+  }
+
+  private drawFlare(x: number, y: number) {
+    const flare = this.add.graphics()
+    flare.fillStyle(0xc8a255, 0.8)
+    flare.fillCircle(x, y, 3)
+    this.tweens.add({
+      targets: flare,
+      alpha: 0.3,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    })
   }
 
   private createBuilding(config: BuildingConfig) {
     const container = this.add.container(config.x, config.y)
 
-    // Building background
+    // Building frame (console panel)
     const bg = this.add.graphics()
-    bg.fillStyle(0x1a2a3e, 0.8)
-    bg.fillRoundedRect(-40, -40, 80, 80, 4)
-    bg.lineStyle(1, 0x2a9d8f, 0.5)
-    bg.strokeRoundedRect(-40, -40, 80, 80, 4)
+    const drawFrame = (highlighted: boolean) => {
+      bg.clear()
+      // Outer glow
+      if (highlighted) {
+        bg.fillStyle(0x2a9d8f, 0.15)
+        bg.fillRect(-46, -46, 92, 92)
+      }
+      // Panel
+      bg.fillStyle(0x0a1628, 0.9)
+      bg.fillRect(-42, -42, 84, 84)
+      // Border
+      bg.lineStyle(highlighted ? 2 : 1, highlighted ? 0x52e0c4 : 0x2a9d8f, highlighted ? 1 : 0.6)
+      bg.strokeRect(-42, -42, 84, 84)
+      // Corner brackets
+      const col = highlighted ? 0xc8a255 : 0x2a9d8f
+      bg.lineStyle(2, col, 0.9)
+      bg.lineBetween(-42, -42, -34, -42)
+      bg.lineBetween(-42, -42, -42, -34)
+      bg.lineBetween(42, -42, 34, -42)
+      bg.lineBetween(42, -42, 42, -34)
+      bg.lineBetween(-42, 42, -34, 42)
+      bg.lineBetween(-42, 42, -42, 34)
+      bg.lineBetween(42, 42, 34, 42)
+      bg.lineBetween(42, 42, 42, 34)
+    }
+    drawFrame(false)
     container.add(bg)
 
     // Building sprite
     if (this.textures.exists(config.key)) {
-      const sprite = this.add.image(0, -4, config.key)
-      sprite.setDisplaySize(56, 56)
+      const sprite = this.add.image(0, -6, config.key)
+      sprite.setDisplaySize(58, 58)
       container.add(sprite)
     } else {
-      // Placeholder icon
-      const placeholder = this.add.text(0, -8, '🏗', {
-        fontSize: '32px',
-      }).setOrigin(0.5)
+      const placeholder = this.add.text(0, -8, '⛵', { fontSize: '32px' }).setOrigin(0.5)
       container.add(placeholder)
     }
 
-    // Building name
-    const nameText = this.add.text(0, 48, config.name, {
-      fontFamily: 'Inter, sans-serif',
-      fontSize: '11px',
-      color: '#ffffff',
+    // Label
+    const nameText = this.add.text(0, 52, config.name, {
+      fontFamily: 'VT323, monospace',
+      fontSize: '13px',
+      color: '#52E0C4',
+      stroke: '#0A1628',
+      strokeThickness: 2,
     }).setOrigin(0.5)
     container.add(nameText)
 
     // Level indicator
-    const levelText = this.add.text(0, 62, 'Lv.0', {
-      fontFamily: 'Inter, sans-serif',
-      fontSize: '10px',
-      color: '#2A9D8F',
+    const levelText = this.add.text(0, 66, 'LV · 0', {
+      fontFamily: 'VT323, monospace',
+      fontSize: '11px',
+      color: '#c8a255',
     }).setOrigin(0.5)
     container.add(levelText)
 
-    // Make interactive
-    const hitArea = this.add.rectangle(0, 0, 80, 80)
+    // Pulse dot (active building)
+    const dot = this.add.graphics()
+    dot.fillStyle(0x52e0c4, 1)
+    dot.fillCircle(-36, -36, 2)
+    container.add(dot)
+    this.tweens.add({
+      targets: dot,
+      alpha: 0.2,
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+    })
+
+    // Hit area
+    const hitArea = this.add.rectangle(0, 0, 84, 84)
     hitArea.setInteractive({ useHandCursor: true })
     container.add(hitArea)
 
     hitArea.on('pointerover', () => {
-      bg.clear()
-      bg.fillStyle(0x2a9d8f, 0.2)
-      bg.fillRoundedRect(-40, -40, 80, 80, 4)
-      bg.lineStyle(2, 0x2a9d8f, 0.8)
-      bg.strokeRoundedRect(-40, -40, 80, 80, 4)
+      drawFrame(true)
+      nameText.setColor('#F4A261')
+      this.tweens.add({
+        targets: container,
+        scale: 1.04,
+        duration: 150,
+        ease: 'Power2',
+      })
     })
 
     hitArea.on('pointerout', () => {
-      bg.clear()
-      bg.fillStyle(0x1a2a3e, 0.8)
-      bg.fillRoundedRect(-40, -40, 80, 80, 4)
-      bg.lineStyle(1, 0x2a9d8f, 0.5)
-      bg.strokeRoundedRect(-40, -40, 80, 80, 4)
+      drawFrame(false)
+      nameText.setColor('#52E0C4')
+      this.tweens.add({
+        targets: container,
+        scale: 1,
+        duration: 150,
+        ease: 'Power2',
+      })
     })
 
     hitArea.on('pointerdown', () => {
-      this.selectedBuilding = config.type
+      // Flash
+      this.tweens.add({
+        targets: container,
+        alpha: 0.5,
+        duration: 80,
+        yoyo: true,
+      })
       window.dispatchEvent(
         new CustomEvent('port:building-click', {
           detail: {
             buildingType: config.type,
             buildingName: config.name,
-            currentLevel: 0, // TODO: read from chain
+            currentLevel: 0,
           },
         })
       )
     })
 
     this.buildings.push(container)
-  }
-
-  private createSetSailButton() {
-    const btnX = CANVAS_WIDTH / 2
-    const btnY = CANVAS_HEIGHT - 40
-
-    const btnBg = this.add.graphics()
-    btnBg.fillStyle(0x2a9d8f, 1)
-    btnBg.fillRoundedRect(btnX - 70, btnY - 16, 140, 32, 6)
-
-    const btnText = this.add.text(btnX, btnY, 'Set Sail', {
-      fontFamily: 'Inter, sans-serif',
-      fontSize: '14px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-    }).setOrigin(0.5)
-
-    const btnHit = this.add.rectangle(btnX, btnY, 140, 32)
-    btnHit.setInteractive({ useHandCursor: true })
-
-    btnHit.on('pointerover', () => {
-      btnBg.clear()
-      btnBg.fillStyle(0x227e72, 1)
-      btnBg.fillRoundedRect(btnX - 70, btnY - 16, 140, 32, 6)
-    })
-
-    btnHit.on('pointerout', () => {
-      btnBg.clear()
-      btnBg.fillStyle(0x2a9d8f, 1)
-      btnBg.fillRoundedRect(btnX - 70, btnY - 16, 140, 32, 6)
-    })
-
-    btnHit.on('pointerdown', () => {
-      this.scene.start('BattleScene')
-      this.scene.launch('UIScene')
-    })
   }
 }
