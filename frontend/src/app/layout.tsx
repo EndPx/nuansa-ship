@@ -11,14 +11,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <title>Nuansa Ship</title>
-        <meta name="description" content="Tactical naval RPG pixel art game on Initia blockchain" />
+        <title>Nuansa Ship — Tactical Naval Command</title>
+        <meta name="description" content="Tactical naval RPG on Initia blockchain. Captain. Ship. Crew. Command." />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=VT323&family=JetBrains+Mono:wght@300;400;500;700&family=IM+Fell+English:ital@0;1&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="bg-navy text-white min-h-screen">
+      <body>
         <WalletProvider>
           {children}
         </WalletProvider>

@@ -3,11 +3,10 @@
 import { useProfile } from '@/hooks/useProfile'
 import { useRouter } from 'next/navigation'
 import { MintScreen } from '@/components/MintScreen'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function LandingPage() {
   // TODO: Replace with real InterwovenKit hook once wallet SDK is installed
-  // const { address, openWallet } = useInterwovenKit()
   const address: string | null = null
   const openWallet = () => {
     console.log('Wallet connect not yet configured')
@@ -17,57 +16,201 @@ export default function LandingPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (address && hasProfile) {
-      router.push('/port')
-    }
+    if (address && hasProfile) router.push('/port')
   }, [address, hasProfile, router])
 
-  if (!address) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-8">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold mb-2">
-            <span className="text-teal">Nuansa</span> Ship
-          </h1>
-          <p className="text-stone text-lg">Tactical Naval RPG on Initia</p>
-        </div>
-
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-64 h-64 bg-navy-400 rounded-lg border border-teal/30 flex items-center justify-center">
-            <span className="text-6xl">&#9875;</span>
-          </div>
-
-          <button
-            onClick={openWallet}
-            className="bg-teal hover:bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors"
-          >
-            Connect Wallet
-          </button>
-
-          <p className="text-stone text-sm">
-            Connect your Initia wallet to begin your voyage
-          </p>
-        </div>
-
-        <div className="absolute bottom-4 text-stone text-xs">
-          Part of the Nuansa Universe
-        </div>
-      </div>
-    )
-  }
+  if (!address) return <LandingCinematic onConnect={openWallet} />
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <div className="w-12 h-12 border-4 border-teal border-t-transparent rounded-full animate-spin" />
-        <p className="text-stone">Loading profile...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-6">
+        <div className="compass-spin">
+          <CompassRose size={120} />
+        </div>
+        <p className="font-hud text-xl text-[color:var(--teal-glow)] text-glow">
+          [ SYNCHRONIZING WITH CHAIN... ]
+        </p>
       </div>
     )
   }
 
-  if (!hasProfile) {
-    return <MintScreen />
-  }
+  if (!hasProfile) return <MintScreen />
 
   return null
+}
+
+/* ─── Cinematic landing ─────────────────────────────────────────────── */
+
+function LandingCinematic({ onConnect }: { onConnect: () => void }) {
+  const [lines, setLines] = useState<string[]>([])
+  const script = [
+    '> ESTABLISHING ENCRYPTED LINK...',
+    '> INITIA TESTNET :: NUANSA-SHIP-1',
+    '> ADMIRALTY BROADCAST // CODE BLACK',
+    '> ALL CAPTAINS: PRESENT FOR COMMISSION',
+  ]
+
+  useEffect(() => {
+    let i = 0
+    const timer = setInterval(() => {
+      if (i >= script.length) return clearInterval(timer)
+      setLines((prev) => [...prev, script[i]])
+      i++
+    }, 450)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <main className="relative min-h-screen w-full overflow-hidden">
+      {/* Background horizon */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 140%, rgba(42,157,143,0.18) 0%, transparent 50%), radial-gradient(ellipse at 50% -20%, rgba(15,30,53,1) 0%, transparent 60%)',
+        }}
+      />
+      {/* Drifting grid horizon */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/2 wave-drift"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(42,157,143,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(42,157,143,0.15) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            transform: 'perspective(400px) rotateX(60deg)',
+            transformOrigin: 'center bottom',
+            maskImage: 'linear-gradient(to top, black 40%, transparent 100%)',
+          }}
+        />
+      </div>
+
+      {/* Top tactical bar */}
+      <header className="absolute top-0 inset-x-0 px-8 py-4 flex items-center justify-between font-hud text-sm text-[color:var(--teal-dim)] border-b border-[color:var(--teal-dim)]/20">
+        <div className="flex items-center gap-3">
+          <span className="w-2 h-2 rounded-full bg-[color:var(--teal-glow)] animate-pulse" />
+          <span>SIGNAL · 7.2 GHz</span>
+          <span className="opacity-40">│</span>
+          <span>LAT -04.2°S · LON 119.5°E</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span>CH //NUANSA-SHIP-1</span>
+          <span className="opacity-40">│</span>
+          <span>{new Date().toISOString().split('T')[0]}</span>
+        </div>
+      </header>
+
+      {/* Main hero */}
+      <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-32">
+        {/* Compass + radar */}
+        <div className="relative mb-10 fade-up">
+          <div className="relative w-[260px] h-[260px] flex items-center justify-center">
+            <div className="absolute inset-0 radar-pulse rounded-full opacity-70" />
+            <div className="absolute inset-4 border border-[color:var(--teal-dim)]/40 rounded-full" />
+            <div className="absolute inset-10 border border-[color:var(--teal-dim)]/30 rounded-full" />
+            <div className="compass-spin relative">
+              <CompassRose size={180} />
+            </div>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h1 className="font-display text-6xl md:text-8xl text-[color:var(--ivory)] fade-up delay-1 tracking-widest text-center">
+          NUANSA
+          <span className="block text-[color:var(--teal-glow)] text-glow -mt-3 md:-mt-6">
+            SHIP
+          </span>
+        </h1>
+
+        {/* Tagline */}
+        <div className="mt-8 text-center fade-up delay-2">
+          <p className="font-hud text-xl md:text-2xl text-[color:var(--brass)] tracking-[0.4em]">
+            ✦ CAPTAIN · SHIP · CREW ✦
+          </p>
+          <p className="mt-2 font-mono text-xs md:text-sm text-[color:var(--teal-dim)] tracking-widest uppercase">
+            Tactical naval warfare on Initia
+          </p>
+        </div>
+
+        {/* Typewriter terminal */}
+        <div className="mt-12 w-full max-w-xl fade-up delay-3">
+          <div className="box-console px-6 py-4 font-hud text-base md:text-lg text-[color:var(--teal-glow)] min-h-[140px]">
+            {lines.map((l, i) => (
+              <div key={i} className="leading-tight">
+                {l}
+              </div>
+            ))}
+            {lines.length < 4 && <span className="cursor-blink" />}
+            {lines.length >= 4 && (
+              <div className="mt-2 text-[color:var(--gold)] cursor-blink">
+                &gt; AWAITING AUTH...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Connect button */}
+        <div className="mt-10 fade-up delay-4">
+          <button onClick={onConnect} className="btn-tactical glitch-hover">
+            ◢ Commission Wallet ◣
+          </button>
+          <p className="mt-4 text-center font-mono text-xs text-[color:var(--teal-dim)] tracking-widest">
+            REQUIRES INITIA TESTNET · INTERWOVENKIT
+          </p>
+        </div>
+      </section>
+
+      {/* Bottom tactical readout */}
+      <footer className="absolute bottom-0 inset-x-0 px-8 py-4 flex items-center justify-between font-hud text-xs text-[color:var(--teal-dim)] border-t border-[color:var(--teal-dim)]/20">
+        <div className="flex items-center gap-6">
+          <span>◉ PART OF THE NUANSA UNIVERSE</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <span>NL · BASE</span>
+          <span className="text-[color:var(--teal-glow)]">NS · INITIA ◢◣</span>
+          <span>NFC · 0G</span>
+        </div>
+      </footer>
+    </main>
+  )
+}
+
+/* ─── Compass rose SVG ─────────────────────────────────────────────── */
+function CompassRose({ size = 160 }: { size?: number }) {
+  const s = size
+  const c = s / 2
+  return (
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} className="drop-shadow-[0_0_12px_rgba(82,224,196,0.5)]">
+      <defs>
+        <radialGradient id="rose">
+          <stop offset="0%" stopColor="#52E0C4" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="#2A9D8F" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* Outer ring */}
+      <circle cx={c} cy={c} r={c - 4} fill="url(#rose)" stroke="#52E0C4" strokeWidth="1" opacity="0.7" />
+      <circle cx={c} cy={c} r={c - 20} fill="none" stroke="#2A9D8F" strokeWidth="0.5" opacity="0.5" />
+      {/* Cardinal */}
+      <g fill="#52E0C4" fontFamily="Cinzel, serif" fontSize={s * 0.08} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
+        <text x={c} y={14}>N</text>
+        <text x={c} y={s - 14}>S</text>
+        <text x={s - 14} y={c}>E</text>
+        <text x={14} y={c}>W</text>
+      </g>
+      {/* Star points */}
+      <g fill="#52E0C4" opacity="0.85">
+        <polygon points={`${c},${c - (c - 30)} ${c + 6},${c} ${c},${c + (c - 30)} ${c - 6},${c}`} />
+        <polygon points={`${c - (c - 30)},${c} ${c},${c - 6} ${c + (c - 30)},${c} ${c},${c + 6}`} opacity="0.7" />
+      </g>
+      <g stroke="#C8A255" strokeWidth="1" opacity="0.6">
+        <line x1={c} y1={c} x2={c + (c - 36) * 0.707} y2={c - (c - 36) * 0.707} />
+        <line x1={c} y1={c} x2={c - (c - 36) * 0.707} y2={c + (c - 36) * 0.707} />
+        <line x1={c} y1={c} x2={c + (c - 36) * 0.707} y2={c + (c - 36) * 0.707} />
+        <line x1={c} y1={c} x2={c - (c - 36) * 0.707} y2={c - (c - 36) * 0.707} />
+      </g>
+      {/* Center */}
+      <circle cx={c} cy={c} r={5} fill="#F4A261" />
+      <circle cx={c} cy={c} r={2} fill="#0A1628" />
+    </svg>
+  )
 }
