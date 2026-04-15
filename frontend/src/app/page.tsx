@@ -4,15 +4,13 @@ import { useProfile } from '@/hooks/useProfile'
 import { useRouter } from 'next/navigation'
 import { MintScreen } from '@/components/MintScreen'
 import { useEffect, useState } from 'react'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
 
 export default function LandingPage() {
-  // TODO: Replace with real InterwovenKit hook once wallet SDK is installed
-  const address: string | null = null
-  const openWallet = () => {
-    console.log('Wallet connect not yet configured')
-  }
+  const { address, openConnect } = useInterwovenKit()
+  const openWallet = openConnect
 
-  const { hasProfile, isLoading } = useProfile(address)
+  const { hasProfile, isLoading } = useProfile(address || null)
   const router = useRouter()
 
   useEffect(() => {

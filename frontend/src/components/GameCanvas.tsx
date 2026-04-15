@@ -7,6 +7,12 @@ import { PreloadScene } from '@/game/scenes/PreloadScene'
 import { PortScene } from '@/game/scenes/PortScene'
 import { BattleScene } from '@/game/scenes/BattleScene'
 import { UIScene } from '@/game/scenes/UIScene'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
+import {
+  buildSubmitMoveTx,
+  buildClaimRewardTx,
+  CONTRACT_ADDRESS,
+} from '@/lib/contracts'
 
 interface GameCanvasProps {
   initialScene?: string
@@ -14,6 +20,7 @@ interface GameCanvasProps {
 
 export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvasProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
+  const { address, isConnected, requestTxSync } = useInterwovenKit()
 
   useEffect(() => {
     if (gameRef.current) return
@@ -25,8 +32,6 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
 
     const game = new Phaser.Game(config)
     gameRef.current = game
-
-    // If a specific scene is requested, store it for PreloadScene to read
     game.registry.set('initialScene', initialScene)
 
     return () => {
@@ -36,6 +41,60 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
       }
     }
   }, [initialScene])
+
+  // Bridge Phaser battle events to signAndBroadcast
+  useEffect(() => {
+    if (initialScene !== 'BattleScene') return
+
+    const broadcast = async (messages: any[], tag: string) => {
+      // Guard: contracts not deployed yet → just log
+      if (!CONTRACT_ADDRESS || !isConnected || !address) {
+        console.log(`[${tag}] would broadcast`, messages)
+        return
+      }
+      try {
+        const hash = await requestTxSync({ messages })
+        console.log(`[${tag}] TX hash:`, hash)
+        window.dispatchEvent(
+          new CustomEvent('chain:confirmed', { detail: { tag, hash } }),
+        )
+      } catch (err) {
+        console.error(`[${tag}] broadcast failed:`, err)
+        window.dispatchEvent(
+          new CustomEvent('battle:log', {
+            detail: { type: 'system', message: `Broadcast failed: ${String(err).slice(0, 60)}` },
+          }),
+        )
+      }
+    }
+
+    const onMove = (e: Event) => {
+      const { x, y } = (e as CustomEvent).detail || {}
+      broadcast(buildSubmitMoveTx(address, 0, x, y), 'submit_move:move')
+    }
+    const onAttack = (e: Event) => {
+      const { x, y } = (e as CustomEvent).detail || {}
+      broadcast(buildSubmitMoveTx(address, 1, x, y), 'submit_move:attack')
+    }
+    const onSkill = (e: Event) => {
+      const { x, y, slot } = (e as CustomEvent).detail || {}
+      broadcast(buildSubmitMoveTx(address, 2, x ?? slot ?? 0, y ?? 0), 'submit_move:skill')
+    }
+    const onClaim = () => {
+      broadcast(buildClaimRewardTx(address), 'claim_reward')
+    }
+
+    window.addEventListener('game:move', onMove)
+    window.addEventListener('game:attack', onAttack)
+    window.addEventListener('game:skill', onSkill)
+    window.addEventListener('game:claim', onClaim)
+    return () => {
+      window.removeEventListener('game:move', onMove)
+      window.removeEventListener('game:attack', onAttack)
+      window.removeEventListener('game:skill', onSkill)
+      window.removeEventListener('game:claim', onClaim)
+    }
+  }, [initialScene, address, isConnected, requestTxSync])
 
   return (
     <div

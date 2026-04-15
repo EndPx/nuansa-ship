@@ -1,9 +1,16 @@
+'use client'
+
 // hooks/useBattle.ts
-// Battle state management + TX submission
-// TODO: Replace stubs with real on-chain interactions once contracts are deployed
+// Battle state management + TX submission via InterwovenKit.
 
 import { useState, useCallback } from 'react'
-import { buildSubmitMoveTx, buildClaimRewardTx } from '@/lib/contracts'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
+import {
+  buildSubmitMoveTx,
+  buildClaimRewardTx,
+  buildStartBattleTx,
+  CONTRACT_ADDRESS,
+} from '@/lib/contracts'
 
 interface BattleState {
   id: number | null
@@ -22,6 +29,7 @@ interface UseBattleResult {
 }
 
 export function useBattle(): UseBattleResult {
+  const { address, isConnected, requestTxSync } = useInterwovenKit()
   const [battle, setBattle] = useState<BattleState>({
     id: null,
     wave: 1,
@@ -31,44 +39,60 @@ export function useBattle(): UseBattleResult {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const startBattle = useCallback(async (wave: number) => {
-    setIsSubmitting(true)
-    try {
-      // TODO: await signAndBroadcast(buildStartBattleTx(wave))
-      console.log('Starting battle wave', wave)
-      setBattle({
-        id: Date.now(),
-        wave,
-        playerHp: 500,
-        status: 'active',
-        isPlayerTurn: true,
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [])
+  const broadcast = useCallback(
+    async (messages: any[], tag: string) => {
+      if (!CONTRACT_ADDRESS || !isConnected || !address) {
+        console.log(`[${tag}] would broadcast`, messages)
+        return
+      }
+      const hash = await requestTxSync({ messages })
+      console.log(`[${tag}] TX hash:`, hash)
+    },
+    [address, isConnected, requestTxSync],
+  )
 
-  const submitMove = useCallback(async (moveType: number, x: number, y: number) => {
-    setIsSubmitting(true)
-    try {
-      const tx = buildSubmitMoveTx(moveType, x, y)
-      console.log('Submitting move:', tx)
-      // TODO: await signAndBroadcast(tx)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [])
+  const startBattle = useCallback(
+    async (wave: number) => {
+      if (!address) return
+      setIsSubmitting(true)
+      try {
+        await broadcast(buildStartBattleTx(address, wave), 'start_battle')
+        setBattle({
+          id: Date.now(),
+          wave,
+          playerHp: 500,
+          status: 'active',
+          isPlayerTurn: true,
+        })
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [address, broadcast],
+  )
+
+  const submitMove = useCallback(
+    async (moveType: number, x: number, y: number) => {
+      if (!address) return
+      setIsSubmitting(true)
+      try {
+        await broadcast(buildSubmitMoveTx(address, moveType, x, y), 'submit_move')
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [address, broadcast],
+  )
 
   const claimReward = useCallback(async () => {
+    if (!address) return
     setIsSubmitting(true)
     try {
-      const tx = buildClaimRewardTx()
-      console.log('Claiming reward:', tx)
-      // TODO: await signAndBroadcast(tx)
+      await broadcast(buildClaimRewardTx(address), 'claim_reward')
     } finally {
       setIsSubmitting(false)
     }
-  }, [])
+  }, [address, broadcast])
 
   return { battle, startBattle, submitMove, claimReward, isSubmitting }
 }

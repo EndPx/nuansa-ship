@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { buildUpgradeBuildingTx } from '@/lib/contracts'
+import { buildUpgradeBuildingTx, CONTRACT_ADDRESS } from '@/lib/contracts'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
 
 interface UpgradePanelProps {
   buildingType: number
@@ -66,6 +67,8 @@ const COST_MULTIPLIERS: Record<number, number> = {
 
 export function UpgradePanel({ buildingType, buildingName, currentLevel, onClose }: UpgradePanelProps) {
   const [isUpgrading, setIsUpgrading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { address, requestTxBlock, isConnected } = useInterwovenKit()
   const maxLevel = 5
   const canUpgrade = currentLevel < maxLevel
   const nextLevel = currentLevel + 1
@@ -74,73 +77,167 @@ export function UpgradePanel({ buildingType, buildingName, currentLevel, onClose
   const descriptions = BUILDING_DESCRIPTIONS[buildingType] || []
 
   const handleUpgrade = async () => {
+    setError(null)
+    if (!isConnected || !address) {
+      setError('Wallet not connected')
+      return
+    }
     setIsUpgrading(true)
     try {
-      const tx = buildUpgradeBuildingTx(buildingType)
-      console.log('Upgrading building:', tx)
-      // TODO: await signAndBroadcast(tx)
-      alert(`Upgrade TX built. Wallet SDK not yet connected.`)
-    } catch (err) {
+      const messages = buildUpgradeBuildingTx(address, buildingType)
+      if (!CONTRACT_ADDRESS) {
+        console.log('[upgrade_building] would broadcast (contract not deployed yet):', messages)
+        setError('Contracts not deployed yet — simulated upgrade')
+        return
+      }
+      const res = await requestTxBlock({ messages })
+      console.log('Upgrade TX hash:', res.transactionHash)
+      onClose()
+    } catch (err: any) {
       console.error('Upgrade failed:', err)
+      setError(err?.message ?? 'Upgrade failed')
     } finally {
       setIsUpgrading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-navy border border-teal/30 rounded-lg p-6 max-w-sm w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-teal">{buildingName}</h2>
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 px-4"
+      style={{
+        background:
+          'radial-gradient(ellipse at center, rgba(10,22,40,0.92) 0%, rgba(5,12,24,0.98) 70%)',
+        backdropFilter: 'blur(4px)',
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative corner-frame box-console p-6 max-w-md w-full fade-up"
+      >
+        <span className="corner tl" />
+        <span className="corner tr" />
+        <span className="corner bl" />
+        <span className="corner br" />
+
+        {/* Header strip */}
+        <div className="flex justify-between items-center mb-4 pb-3 border-b border-[color:var(--teal-dim)]/30">
+          <div>
+            <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">
+              ◉ FACILITY UPGRADE
+            </div>
+            <h2 className="font-display text-2xl text-[color:var(--ivory)] tracking-widest text-glow mt-0.5">
+              {buildingName}
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="text-stone hover:text-white transition-colors text-xl"
+            className="font-hud text-2xl text-[color:var(--teal-dim)] hover:text-[color:var(--blood)] transition-colors leading-none"
+            aria-label="Close"
           >
-            &#10005;
+            ✕
           </button>
         </div>
 
-        <div className="mb-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-stone">Current Level</span>
-            <span className="font-semibold">{currentLevel} / {maxLevel}</span>
+        {/* Level progress */}
+        <div className="mb-5">
+          <div className="flex justify-between font-hud text-xs mb-2">
+            <span className="text-[color:var(--teal-dim)] tracking-widest">
+              TIER CLEARANCE
+            </span>
+            <span className="text-[color:var(--parchment)] tracking-wider">
+              LV {currentLevel} / {maxLevel}
+            </span>
           </div>
-
-          {/* Level progress bar */}
-          <div className="w-full bg-navy-300 rounded-full h-2">
-            <div
-              className="bg-teal rounded-full h-2 transition-all"
-              style={{ width: `${(currentLevel / maxLevel) * 100}%` }}
-            />
+          <div className="flex gap-1">
+            {Array.from({ length: maxLevel }, (_, i) => (
+              <div
+                key={i}
+                className="flex-1 h-3 border border-[color:var(--teal-dim)]/40"
+                style={{
+                  background:
+                    i < currentLevel
+                      ? 'linear-gradient(180deg, #52E0C4 0%, #2A9D8F 100%)'
+                      : i === currentLevel && canUpgrade
+                      ? 'linear-gradient(180deg, rgba(244,162,97,0.25) 0%, rgba(244,162,97,0.05) 100%)'
+                      : 'transparent',
+                  boxShadow:
+                    i < currentLevel
+                      ? '0 0 8px rgba(82,224,196,0.6)'
+                      : i === currentLevel && canUpgrade
+                      ? 'inset 0 0 8px rgba(244,162,97,0.3)'
+                      : 'none',
+                }}
+              />
+            ))}
           </div>
         </div>
 
         {canUpgrade && (
           <>
-            <div className="bg-navy-400 rounded-lg p-3 mb-4 border border-teal/10">
-              <h3 className="text-sm font-semibold text-teal mb-1">Level {nextLevel} Bonus</h3>
-              <p className="text-xs text-stone">
+            {/* Level bonus intel */}
+            <div
+              className="relative p-4 mb-4 border border-[color:var(--brass)]/40"
+              style={{
+                background:
+                  'linear-gradient(180deg, rgba(200,162,85,0.08) 0%, rgba(139,105,20,0.03) 100%)',
+              }}
+            >
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="font-hud text-xs text-[color:var(--brass)] tracking-[0.3em]">
+                  ◈ LV {nextLevel} INTEL
+                </span>
+                <span className="font-hud text-[10px] text-[color:var(--teal-dim)] tracking-widest">
+                  CLASSIFIED
+                </span>
+              </div>
+              <p className="font-mono text-sm text-[color:var(--parchment)] leading-relaxed">
                 {descriptions[currentLevel] || 'Improved stats'}
               </p>
             </div>
 
-            <div className="flex justify-between items-center text-sm mb-4">
-              <span className="text-stone">Cost</span>
-              <span className="text-yellow-400">{cost}x {material}</span>
+            {/* Cost ledger */}
+            <div className="mb-5 p-3 border border-[color:var(--teal-dim)]/40 bg-[color:var(--abyss)]/60">
+              <div className="flex justify-between items-center">
+                <span className="font-hud text-xs text-[color:var(--teal-dim)] tracking-[0.3em]">
+                  MATERIAL COST
+                </span>
+                <span className="font-display text-lg text-[color:var(--gold)] text-glow-gold">
+                  × {cost} {material}
+                </span>
+              </div>
             </div>
+
+            {error && (
+              <p className="mb-3 font-hud text-xs text-[color:var(--blood)] tracking-wider text-center">
+                ⚠ {error}
+              </p>
+            )}
 
             <button
               onClick={handleUpgrade}
               disabled={isUpgrading}
-              className="w-full bg-teal hover:bg-teal-600 text-white py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              className="btn-tactical glitch-hover w-full"
             >
-              {isUpgrading ? 'Upgrading...' : `Upgrade to Level ${nextLevel}`}
+              {isUpgrading
+                ? '◇ TRANSMITTING... ◇'
+                : `◢ AUTHORIZE · LV ${nextLevel} ◣`}
             </button>
           </>
         )}
 
         {!canUpgrade && (
-          <p className="text-center text-teal font-semibold py-2">Max Level Reached</p>
+          <div className="text-center py-6">
+            <div className="font-hud text-xs text-[color:var(--teal-dim)] tracking-[0.3em]">
+              ◉ STATUS
+            </div>
+            <p className="mt-2 font-display text-xl text-[color:var(--teal-glow)] text-glow tracking-widest">
+              MAX TIER ACHIEVED
+            </p>
+            <p className="mt-1 font-mono text-xs text-[color:var(--teal-dim)]">
+              No further upgrades available for this facility.
+            </p>
+          </div>
         )}
       </div>
     </div>

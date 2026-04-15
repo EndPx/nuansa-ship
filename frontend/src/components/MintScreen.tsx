@@ -2,22 +2,29 @@
 
 import { useState } from 'react'
 import { buildMintStarterPackTx } from '@/lib/contracts'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
 
 export function MintScreen() {
   const [captainName, setCaptainName] = useState('')
   const [minting, setMinting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { address, requestTxBlock, isConnected } = useInterwovenKit()
 
   const handleMint = async () => {
     if (!captainName.trim()) return
+    if (!isConnected || !address) {
+      setError('Wallet not connected')
+      return
+    }
     setMinting(true)
     setError(null)
     try {
-      // TODO: wire real signAndBroadcast
-      console.log('TX:', buildMintStarterPackTx(captainName))
-      await new Promise((r) => setTimeout(r, 1600))
+      const messages = buildMintStarterPackTx(address, captainName)
+      const res = await requestTxBlock({ messages })
+      console.log('Mint TX hash:', res.transactionHash)
       window.location.href = '/port'
     } catch (e: any) {
+      console.error('Mint failed:', e)
       setError(e?.message ?? 'Commission failed')
       setMinting(false)
     }

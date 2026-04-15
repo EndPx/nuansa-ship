@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useFleet } from '@/hooks/useFleet'
 import { usePort } from '@/hooks/usePort'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { useAutoSign } from '@/hooks/useAutoSign'
 
 const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
@@ -18,14 +20,23 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
 
 export default function PortPage() {
   const router = useRouter()
-  // TODO: replace with real wallet address once InterwovenKit is wired
-  const address: string | null = null
-  const fleet = useFleet(address)
-  const port = usePort(address)
+  const { address, username } = useInterwovenKit()
+  const fleet = useFleet(address || null)
+  const port = usePort(address || null)
+  const { startBattleSession } = useAutoSign()
 
   const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
-  const captainName = address ? 'albary.init' : '—'
+  const captainName = username ?? (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—')
   const shipClassName = fleet.ship ? shipClasses[fleet.ship.shipClass] ?? 'Corvette' : 'Corvette'
+
+  const handleSetSail = async () => {
+    try {
+      await startBattleSession()
+    } catch (err) {
+      console.warn('Auto-sign session denied or unavailable:', err)
+    }
+    router.push('/battle')
+  }
 
   return (
     <main className="relative min-h-screen px-4 py-6 md:px-8 md:py-10">
@@ -94,7 +105,7 @@ export default function PortPage() {
           <div className="flex items-center justify-between gap-4 max-w-[640px] mx-auto font-hud text-xs text-[color:var(--teal-dim)]">
             <span>◊ CLICK BUILDING TO UPGRADE</span>
             <button
-              onClick={() => router.push('/battle')}
+              onClick={handleSetSail}
               className="btn-tactical variant-blood glitch-hover"
             >
               ◢ SET SAIL ◣
