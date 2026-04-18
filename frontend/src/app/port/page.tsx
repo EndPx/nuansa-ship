@@ -6,6 +6,14 @@ import { useFleet } from '@/hooks/useFleet'
 import { usePort } from '@/hooks/usePort'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useAutoSign } from '@/hooks/useAutoSign'
+import {
+  Panel,
+  StatBar,
+  CornerFrame,
+  TacticalButton,
+  CrewRow,
+  CompassWatermark,
+} from '@/components/ui'
 
 const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
@@ -40,29 +48,10 @@ export default function PortPage() {
 
   return (
     <main className="relative min-h-screen px-4 py-6 md:px-8 md:py-10 overflow-hidden">
-      {/* Ambient backdrop — rhumb lines + compass watermark */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.05]">
+      {/* Ambient backdrop — compass watermark */}
+      <div className="absolute inset-0 pointer-events-none">
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 slow-rotate">
-          <svg width={820} height={820} viewBox="0 0 820 820">
-            <circle cx="410" cy="410" r="408" fill="none" stroke="#C8A255" strokeWidth="1" />
-            <circle cx="410" cy="410" r="320" fill="none" stroke="#C8A255" strokeWidth="0.5" />
-            <circle cx="410" cy="410" r="220" fill="none" stroke="#C8A255" strokeWidth="0.5" />
-            <circle cx="410" cy="410" r="120" fill="none" stroke="#C8A255" strokeWidth="0.5" />
-            {Array.from({ length: 32 }, (_, i) => {
-              const a = (i * Math.PI) / 16
-              return (
-                <line
-                  key={i}
-                  x1="410"
-                  y1="410"
-                  x2={410 + Math.cos(a) * 408}
-                  y2={410 + Math.sin(a) * 408}
-                  stroke="#C8A255"
-                  strokeWidth="0.4"
-                />
-              )
-            })}
-          </svg>
+          <CompassWatermark size={820} opacity={0.05} />
         </div>
       </div>
 
@@ -108,17 +97,17 @@ export default function PortPage() {
         <aside className="space-y-4 fade-up">
           <Panel title="◉ FLEET DOSSIER">
             <DossierRow label="CAPTAIN" value={captainName} accent="gold" />
-            <Stat label="LEADERSHIP" value={fleet.captain?.leadership ?? 50} max={100} />
-            <Stat label="TACTICS" value={fleet.captain?.tactics ?? 50} max={100} />
-            <Stat label="XP / LVL" value={`${fleet.captain?.xp ?? 0} / LV ${fleet.captain?.level ?? 1}`} />
+            <StatBar label="LEADERSHIP" current={fleet.captain?.leadership ?? 50} max={100} />
+            <StatBar label="TACTICS" current={fleet.captain?.tactics ?? 50} max={100} />
+            <StatBar label="XP / LVL" current={`${fleet.captain?.xp ?? 0} / LV ${fleet.captain?.level ?? 1}`} />
           </Panel>
 
           <Panel title="⛵ FLAGSHIP">
             <DossierRow label="CLASS" value={shipClassName} accent="teal" />
-            <Stat label="HULL" value={fleet.ship?.hull ?? 500} max={fleet.ship?.maxHull ?? 500} bar="blood" />
-            <Stat label="WEAPON" value={fleet.ship?.weaponDamage ?? 60} max={200} />
-            <Stat label="ENGINE" value={fleet.ship?.engine ?? 4} max={5} />
-            <Stat label="ARMOR" value={fleet.ship?.armor ?? 5} max={100} />
+            <StatBar label="HULL" current={fleet.ship?.hull ?? 500} max={fleet.ship?.maxHull ?? 500} variant="blood" />
+            <StatBar label="WEAPON" current={fleet.ship?.weaponDamage ?? 60} max={200} />
+            <StatBar label="ENGINE" current={fleet.ship?.engine ?? 4} max={5} />
+            <StatBar label="ARMOR" current={fleet.ship?.armor ?? 5} max={100} />
           </Panel>
 
           <Panel title="👥 CREW ROSTER">
@@ -135,23 +124,16 @@ export default function PortPage() {
 
         {/* ───── Center: Game canvas ───── */}
         <section className="space-y-4 fade-up delay-1">
-          <div className="corner-frame relative mx-auto" style={{ width: 640 }}>
-            <span className="corner tl" />
-            <span className="corner tr" />
-            <span className="corner bl" />
-            <span className="corner br" />
+          <CornerFrame className="mx-auto" style={{ width: 640 }}>
             <GameCanvas initialScene="PortScene" />
-          </div>
+          </CornerFrame>
 
           {/* Action bar under canvas */}
           <div className="flex items-center justify-between gap-4 max-w-[640px] mx-auto font-hud text-xs text-[color:var(--teal-dim)]">
             <span>◊ CLICK BUILDING TO UPGRADE</span>
-            <button
-              onClick={handleSetSail}
-              className="btn-tactical variant-blood glitch-hover"
-            >
+            <TacticalButton variant="blood" glitch onClick={handleSetSail}>
               ◢ SET SAIL ◣
-            </button>
+            </TacticalButton>
             <span>TURN · SAFE HARBOR ◊</span>
           </div>
         </section>
@@ -198,18 +180,7 @@ export default function PortPage() {
   )
 }
 
-/* ─── Components ─────────────────────────────────────────────────── */
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="box-console p-4 relative">
-      <div className="font-hud text-sm tracking-[0.25em] text-[color:var(--teal-glow)] mb-3 pb-2 border-b border-[color:var(--teal-dim)]/30">
-        {title}
-      </div>
-      <div className="space-y-2">{children}</div>
-    </div>
-  )
-}
+/* ─── Port-specific helpers ──────────────────────────────────────── */
 
 function DossierRow({
   label,
@@ -229,78 +200,6 @@ function DossierRow({
       <span className="font-display text-base" style={{ color }}>
         {value}
       </span>
-    </div>
-  )
-}
-
-function Stat({
-  label,
-  value,
-  max,
-  bar = 'teal',
-}: {
-  label: string
-  value: number | string
-  max?: number
-  bar?: 'teal' | 'blood' | 'gold'
-}) {
-  const pct =
-    typeof value === 'number' && max ? Math.min(100, (value / max) * 100) : null
-  const color =
-    bar === 'blood' ? '#e63946' : bar === 'gold' ? '#F4A261' : '#52E0C4'
-  return (
-    <div>
-      <div className="flex justify-between font-hud text-xs">
-        <span className="text-[color:var(--teal-dim)] tracking-wider">{label}</span>
-        <span className="text-[color:var(--parchment)]">
-          {value}
-          {max && typeof value === 'number' ? ` / ${max}` : ''}
-        </span>
-      </div>
-      {pct !== null && (
-        <div className="mt-1 h-[5px] bg-[color:var(--abyss)] border border-[color:var(--teal-dim)]/30 relative overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0 transition-all"
-            style={{
-              width: `${pct}%`,
-              background: `linear-gradient(90deg, ${color}55 0%, ${color} 100%)`,
-              boxShadow: `0 0 8px ${color}aa`,
-            }}
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CrewRow({ role, hp, status }: { role: number; hp: number; status: number }) {
-  const roles = ['Gunner', 'Navigator', 'Engineer']
-  const icons = ['💥', '🧭', '🔧']
-  const statusColors = ['#52E0C4', '#F4A261', '#E63946']
-  const statusText = ['READY', 'INJURED', 'KO']
-  return (
-    <div className="flex items-center gap-3 border-b border-[color:var(--teal-dim)]/20 pb-2 last:border-b-0 last:pb-0">
-      <div className="text-2xl">{icons[role]}</div>
-      <div className="flex-1">
-        <div className="font-display text-sm text-[color:var(--parchment)]">
-          {roles[role]}
-        </div>
-        <div className="h-1 bg-[color:var(--abyss)] mt-1 relative overflow-hidden">
-          <div
-            className="absolute inset-y-0 left-0"
-            style={{
-              width: `${hp}%`,
-              background: hp > 50 ? '#52E0C4' : hp > 0 ? '#F4A261' : '#E63946',
-            }}
-          />
-        </div>
-      </div>
-      <div
-        className="font-hud text-xs tracking-wider"
-        style={{ color: statusColors[status] }}
-      >
-        {statusText[status]}
-      </div>
     </div>
   )
 }

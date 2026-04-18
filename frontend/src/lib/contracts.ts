@@ -45,32 +45,65 @@ function msg(
   }
 }
 
-/** mint_starter::mint_starter_pack(captain_name: String) */
+/**
+ * mint_starter::mint_starter_pack(captain_name: String)
+ *
+ * Single TX that mints Captain NFT + Corvette NFT + Gunner NFT and
+ * initializes the player's Port (all buildings at level 0). Fails
+ * if the player already has a PlayerProfile.
+ */
 export function buildMintStarterPackTx(sender: string, captainName: string) {
   return [msg(sender, MODULE.mintStarter, 'mint_starter_pack', [bcsString(captainName)])]
 }
 
-/** battle::start_battle(wave: u8) */
+/**
+ * battle::start_battle(wave: u8)
+ *
+ * Spawns the player + enemies for the given wave onto a 10×8 grid.
+ * Wave 1–3 = 1 enemy, 4–6 = 2 enemies, 7+ = boss.
+ */
 export function buildStartBattleTx(sender: string, wave: number) {
   return [msg(sender, MODULE.battle, 'start_battle', [bcsU8(wave)])]
 }
 
-/** battle::submit_move(move_type: u8, x: u8, y: u8) */
+/**
+ * battle::submit_move(move_type: u8, x: u8, y: u8)
+ *
+ * Submits a single player action during their turn. move_type:
+ *   0 = move, 1 = attack, 2 = crew skill.
+ * Coordinates are tile indices (0..9 × 0..7).
+ */
 export function buildSubmitMoveTx(sender: string, moveType: number, x: number, y: number) {
   return [msg(sender, MODULE.battle, 'submit_move', [bcsU8(moveType), bcsU8(x), bcsU8(y)])]
 }
 
-/** battle::claim_reward() */
+/**
+ * battle::claim_reward()
+ *
+ * Callable only when the active Battle has status == 1 (won). Rolls
+ * loot from the wave-appropriate drop table and deposits it into the
+ * player's Inventory, then grants captain XP.
+ */
 export function buildClaimRewardTx(sender: string) {
   return [msg(sender, MODULE.battle, 'claim_reward', [])]
 }
 
-/** port::upgrade_building(building_type: u8) */
+/**
+ * port::upgrade_building(building_type: u8)
+ *
+ * Consumes the required material from Inventory (cost = next_level × multiplier)
+ * and increments the targeted building level. Max level is 5.
+ * building_type: 0=Shipyard 1=Armory 2=Barracks 3=AdmiralsHall 4=Warehouse
+ */
 export function buildUpgradeBuildingTx(sender: string, buildingType: number) {
   return [msg(sender, MODULE.port, 'upgrade_building', [bcsU8(buildingType)])]
 }
 
-/** port::rest_crew(crew_token_id: String) */
+/**
+ * port::rest_crew(crew_token_id: String)
+ *
+ * Clears an Injured crew member back to Ready. Requires barracks_level >= 1.
+ */
 export function buildRestCrewTx(sender: string, crewTokenId: string) {
   return [msg(sender, MODULE.port, 'rest_crew', [bcsString(crewTokenId)])]
 }

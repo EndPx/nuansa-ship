@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { MintScreen } from '@/components/MintScreen'
 import { useEffect, useState } from 'react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { TacticalButton } from '@/components/ui'
 
 export default function LandingPage() {
   const { address, openConnect } = useInterwovenKit()
@@ -196,9 +197,9 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
 
         {/* Connect button */}
         <div className="mt-10 fade-up delay-4">
-          <button onClick={onConnect} className="btn-tactical glitch-hover">
+          <TacticalButton variant="teal" glitch onClick={onConnect}>
             ◢ Commission Wallet ◣
-          </button>
+          </TacticalButton>
           <p className="mt-4 text-center font-mono text-xs text-[color:var(--teal-dim)] tracking-widest">
             REQUIRES INITIA TESTNET · INTERWOVENKIT
           </p>

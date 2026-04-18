@@ -1,9 +1,18 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BattleLog } from '@/components/BattleLog'
+import { DamageFloater } from '@/components/DamageFloater'
+import {
+  Panel,
+  StatBar,
+  CornerFrame,
+  TacticalButton,
+  CrewRow,
+  CompassWatermark,
+} from '@/components/ui'
 
 const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
@@ -16,34 +25,88 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ),
 })
 
+type ActionMode = 'move' | 'attack' | 'skill' | null
+
 export default function BattlePage() {
   const router = useRouter()
   const [wave, setWave] = useState(1)
   const [turn, setTurn] = useState<'player' | 'enemy'>('player')
   const [hp, setHp] = useState({ current: 500, max: 500 })
+  const [actionMode, setActionMode] = useState<ActionMode>(null)
+  const canvasFrameRef = useRef<HTMLDivElement>(null)
 
+  // ── Wire Phaser → React events ────────────────────────────
   useEffect(() => {
-    const onTurn = (e: any) => setTurn(e.detail.turn)
-    const onHp = (e: any) => setHp(e.detail)
-    const onWave = (e: any) => setWave(e.detail.wave)
-    window.addEventListener('battle:turn', onTurn as any)
-    window.addEventListener('battle:hp', onHp as any)
-    window.addEventListener('battle:wave', onWave as any)
+    const onTurn = (e: Event) => {
+      const next = (e as CustomEvent).detail?.turn as 'player' | 'enemy'
+      setTurn(next)
+      // Toggle body class to escalate the global CRT / red vignette
+      if (next === 'enemy') document.body.classList.add('enemy-turn')
+      else document.body.classList.remove('enemy-turn')
+    }
+    const onHp = (e: Event) => setHp((e as CustomEvent).detail)
+    const onWave = (e: Event) => setWave((e as CustomEvent).detail?.wave ?? 1)
+    const onShake = () => {
+      const el = canvasFrameRef.current
+      if (!el) return
+      el.classList.remove('shake-hit')
+      // force reflow to restart animation
+      void el.offsetWidth
+      el.classList.add('shake-hit')
+      setTimeout(() => el.classList.remove('shake-hit'), 450)
+    }
+    window.addEventListener('battle:turn', onTurn)
+    window.addEventListener('battle:hp', onHp)
+    window.addEventListener('battle:wave', onWave)
+    window.addEventListener('battle:shake', onShake)
     return () => {
-      window.removeEventListener('battle:turn', onTurn as any)
-      window.removeEventListener('battle:hp', onHp as any)
-      window.removeEventListener('battle:wave', onWave as any)
+      window.removeEventListener('battle:turn', onTurn)
+      window.removeEventListener('battle:hp', onHp)
+      window.removeEventListener('battle:wave', onWave)
+      window.removeEventListener('battle:shake', onShake)
+      document.body.classList.remove('enemy-turn')
     }
   }, [])
 
+  // ── Dispatch action mode to Phaser ────────────────────────
+  const setAction = (mode: Exclude<ActionMode, null>) => {
+    setActionMode(mode)
+    window.dispatchEvent(new CustomEvent('ui:setAction', { detail: { mode } }))
+  }
+  const endTurn = () => {
+    setActionMode(null)
+    window.dispatchEvent(new CustomEvent('ui:endTurn'))
+  }
+
   const hpPct = Math.round((hp.current / hp.max) * 100)
+  const isEnemy = turn === 'enemy'
 
   return (
     <main className="relative min-h-screen px-4 py-6">
+      {/* Global red-alert vignette (toggled by body.enemy-turn) */}
+      <div className="red-vignette" aria-hidden />
+
+      {/* Ambient rhumb watermark — tone flips to blood during enemy turn */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 slow-rotate">
+          <CompassWatermark
+            size={720}
+            opacity={isEnemy ? 0.07 : 0.04}
+            tone={isEnemy ? 'brass' : 'teal'}
+          />
+        </div>
+      </div>
+
       {/* Top command bar */}
-      <header className="flex items-center justify-between mb-4 pb-3 border-b border-[color:var(--blood)]/40">
+      <header
+        className="relative flex items-center justify-between mb-4 pb-3 border-b transition-colors"
+        style={{ borderColor: isEnemy ? 'rgba(230,57,70,0.6)' : 'rgba(230,57,70,0.25)' }}
+      >
         <div className="flex items-center gap-4">
-          <div className="w-3 h-3 rounded-full bg-[color:var(--blood)] animate-pulse" />
+          <div
+            className="w-3 h-3 rounded-full animate-pulse"
+            style={{ background: isEnemy ? 'var(--blood)' : 'var(--teal-glow)' }}
+          />
           <div>
             <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--blood)]">
               COMBAT SECTOR / ENGAGEMENT
@@ -56,29 +119,32 @@ export default function BattlePage() {
         <div className="flex items-center gap-6">
           <WaveBadge wave={wave} />
           <TurnBadge turn={turn} />
-          <button
-            onClick={() => router.push('/port')}
-            className="btn-tactical"
-          >
+          <TacticalButton variant="teal" onClick={() => router.push('/port')}>
             ← RETREAT
-          </button>
+          </TacticalButton>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-5">
+      <div className="relative grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-5">
         {/* Left: Player status */}
         <aside className="space-y-4 fade-up">
           <Panel title="⚓ YOUR FLEET">
-            <HpBar label="HULL INTEGRITY" current={hp.current} max={hp.max} />
+            <StatBar
+              label="HULL INTEGRITY"
+              current={hp.current}
+              max={hp.max}
+              variant="auto"
+              flash
+            />
             <div className="mt-3 font-hud text-xs text-[color:var(--teal-dim)]">
               {hpPct > 50 ? '◉ SYSTEMS NOMINAL' : hpPct > 20 ? '◈ HULL STRESS' : '⚠ CRITICAL'}
             </div>
           </Panel>
 
           <Panel title="👥 CREW">
-            <CrewChip role={0} status="READY" />
-            <CrewChip role={1} status="READY" />
-            <CrewChip role={2} status="READY" />
+            <CrewRow role={0} hp={100} status={0} compact />
+            <CrewRow role={1} hp={100} status={0} compact />
+            <CrewRow role={2} hp={100} status={0} compact />
           </Panel>
 
           <Panel title="⚡ SPECIAL">
@@ -90,54 +156,66 @@ export default function BattlePage() {
 
         {/* Center: Battle canvas */}
         <section className="space-y-4 fade-up delay-1">
-          <div className="corner-frame relative mx-auto" style={{ width: 640 }}>
-            <span className="corner tl" />
-            <span className="corner tr" />
-            <span className="corner bl" />
-            <span className="corner br" />
-            <GameCanvas initialScene="BattleScene" />
-          </div>
+          <CornerFrame
+            className="mx-auto"
+            tone={isEnemy ? 'blood' : 'teal'}
+            style={{ width: 640 }}
+          >
+            <div ref={canvasFrameRef} className="relative">
+              <GameCanvas initialScene="BattleScene" />
+              {/* Damage floaters layer */}
+              <DamageFloater />
+              {/* Targeting reticle overlay when attack mode active */}
+              {actionMode === 'attack' && turn === 'player' && (
+                <div className="reticle">
+                  <div className="reticle-ticks">
+                    <span className="t" />
+                    <span className="b" />
+                    <span className="l" />
+                    <span className="r" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </CornerFrame>
 
           {/* Action rail */}
           <div className="flex items-center justify-center gap-3 max-w-[640px] mx-auto">
-            <ActionBtn
-              label="◇ MOVE"
-              accent="teal"
+            <TacticalButton
+              rail
+              variant="teal"
               disabled={turn !== 'player'}
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent('ui:setAction', { detail: { mode: 'move' } })
-                )
-              }
-            />
-            <ActionBtn
-              label="⚔ ATTACK"
-              accent="blood"
+              onClick={() => setAction('move')}
+              className={actionMode === 'move' ? 'ring-1 ring-[color:var(--teal-glow)]' : ''}
+            >
+              ◇ MOVE
+            </TacticalButton>
+            <TacticalButton
+              rail
+              variant="blood"
               disabled={turn !== 'player'}
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent('ui:setAction', { detail: { mode: 'attack' } })
-                )
-              }
-            />
-            <ActionBtn
-              label="⚡ SKILL"
-              accent="gold"
+              onClick={() => setAction('attack')}
+              className={actionMode === 'attack' ? 'ring-1 ring-[color:var(--blood)]' : ''}
+            >
+              ⚔ ATTACK
+            </TacticalButton>
+            <TacticalButton
+              rail
+              variant="gold"
               disabled={turn !== 'player'}
-              onClick={() =>
-                window.dispatchEvent(
-                  new CustomEvent('ui:setAction', { detail: { mode: 'skill' } })
-                )
-              }
-            />
-            <ActionBtn
-              label="⏭ END TURN"
-              accent="teal"
+              onClick={() => setAction('skill')}
+              className={actionMode === 'skill' ? 'ring-1 ring-[color:var(--gold)]' : ''}
+            >
+              ⚡ SKILL
+            </TacticalButton>
+            <TacticalButton
+              rail
+              variant="teal"
               disabled={turn !== 'player'}
-              onClick={() =>
-                window.dispatchEvent(new CustomEvent('ui:endTurn'))
-              }
-            />
+              onClick={endTurn}
+            >
+              ⏭ END TURN
+            </TacticalButton>
           </div>
         </section>
 
@@ -150,26 +228,17 @@ export default function BattlePage() {
       </div>
 
       {/* Bottom tactical strip */}
-      <footer className="mt-6 pt-3 border-t border-[color:var(--blood)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex justify-between">
+      <footer className="relative mt-6 pt-3 border-t border-[color:var(--blood)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex justify-between">
         <span>◉ BATTLE.MOVE · SESSION KEY ACTIVE ◊ AUTO-SIGN</span>
-        <span className="text-[color:var(--gold)]">◊ CLICK TILE TO MOVE · RIGHT-CLICK ENEMY TO ATTACK</span>
+        <span className="text-[color:var(--gold)]">
+          ◊ CLICK TILE TO MOVE · RIGHT-CLICK ENEMY TO ATTACK
+        </span>
       </footer>
     </main>
   )
 }
 
-/* ─── Components ──────────────────────────────────────────────────── */
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="box-console p-4">
-      <div className="font-hud text-sm tracking-[0.25em] text-[color:var(--teal-glow)] mb-3 pb-2 border-b border-[color:var(--teal-dim)]/30">
-        {title}
-      </div>
-      {children}
-    </div>
-  )
-}
+/* ─── Battle-specific helpers ──────────────────────────────── */
 
 function WaveBadge({ wave }: { wave: number }) {
   return (
@@ -188,55 +257,16 @@ function TurnBadge({ turn }: { turn: 'player' | 'enemy' }) {
   const isP = turn === 'player'
   return (
     <div
-      className="px-4 py-2 border font-hud tracking-[0.3em] text-sm"
+      className="px-4 py-2 border font-hud tracking-[0.3em] text-sm transition-all"
       style={{
         color: isP ? 'var(--teal-glow)' : 'var(--blood)',
         borderColor: isP ? 'var(--teal-glow)' : 'var(--blood)',
         boxShadow: isP
           ? '0 0 20px rgba(82,224,196,0.4)'
-          : '0 0 20px rgba(230,57,70,0.4)',
+          : '0 0 28px rgba(230,57,70,0.6), inset 0 0 12px rgba(230,57,70,0.2)',
       }}
     >
       {isP ? '◉ YOUR TURN' : '◈ ENEMY TURN'}
-    </div>
-  )
-}
-
-function HpBar({ label, current, max }: { label: string; current: number; max: number }) {
-  const pct = Math.min(100, (current / max) * 100)
-  const color = pct > 60 ? '#52E0C4' : pct > 25 ? '#F4A261' : '#E63946'
-  return (
-    <div>
-      <div className="flex justify-between font-hud text-xs mb-1">
-        <span className="text-[color:var(--teal-dim)] tracking-wider">{label}</span>
-        <span style={{ color }}>{current}/{max}</span>
-      </div>
-      <div className="h-2 bg-[color:var(--abyss)] border border-[color:var(--teal-dim)]/30 relative overflow-hidden">
-        <div
-          className="absolute inset-y-0 left-0 transition-all duration-500"
-          style={{
-            width: `${pct}%`,
-            background: `linear-gradient(90deg, ${color}55, ${color})`,
-            boxShadow: `0 0 12px ${color}`,
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function CrewChip({ role, status }: { role: number; status: string }) {
-  const roles = ['Gunner', 'Navigator', 'Engineer']
-  const icons = ['💥', '🧭', '🔧']
-  return (
-    <div className="flex items-center justify-between font-mono text-sm py-1 border-b border-[color:var(--teal-dim)]/20 last:border-0">
-      <div className="flex items-center gap-2">
-        <span className="text-xl">{icons[role]}</span>
-        <span className="text-[color:var(--parchment)]">{roles[role]}</span>
-      </div>
-      <span className="font-hud text-xs text-[color:var(--teal-glow)] tracking-wider">
-        {status}
-      </span>
     </div>
   )
 }
@@ -245,7 +275,7 @@ function SkillSlot({ name, cd }: { name: string; cd: string }) {
   const ready = cd === 'READY'
   return (
     <button
-      className="w-full flex items-center justify-between font-mono text-sm py-1.5 px-2 border-b border-[color:var(--teal-dim)]/20 last:border-0 hover:bg-[color:var(--teal-dim)]/10 transition-colors"
+      className="w-full flex items-center justify-between font-mono text-sm py-1.5 px-2 border-b border-[color:var(--teal-dim)]/20 last:border-0 hover:bg-[color:var(--teal-dim)]/10 transition-colors disabled:opacity-50"
       disabled={!ready}
     >
       <span className="text-[color:var(--parchment)]">{name}</span>
@@ -255,42 +285,6 @@ function SkillSlot({ name, cd }: { name: string; cd: string }) {
       >
         {cd}
       </span>
-    </button>
-  )
-}
-
-function ActionBtn({
-  label,
-  accent,
-  onClick,
-  disabled = false,
-}: {
-  label: string
-  accent: 'teal' | 'blood' | 'gold'
-  onClick?: () => void
-  disabled?: boolean
-}) {
-  const borderMap: Record<string, string> = {
-    teal: 'var(--teal)',
-    blood: 'var(--blood)',
-    gold: 'var(--gold)',
-  }
-  const colorMap: Record<string, string> = {
-    teal: 'var(--teal-glow)',
-    blood: '#ffb3b8',
-    gold: 'var(--gold)',
-  }
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="flex-1 font-hud tracking-[0.2em] text-base py-3 border transition-all hover:bg-[color:var(--teal-dim)]/20 disabled:opacity-40 disabled:cursor-not-allowed"
-      style={{
-        borderColor: borderMap[accent],
-        color: colorMap[accent],
-      }}
-    >
-      {label}
     </button>
   )
 }

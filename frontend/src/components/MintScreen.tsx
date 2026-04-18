@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { buildMintStarterPackTx } from '@/lib/contracts'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { CompassWatermark, TacticalButton, WaxSeal } from '@/components/ui'
 
 export function MintScreen() {
   const [captainName, setCaptainName] = useState('')
@@ -42,9 +43,9 @@ export function MintScreen() {
       />
 
       {/* Slow rotating compass watermark (huge, low opacity) */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-[0.04]">
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
         <div className="slow-rotate">
-          <WatermarkCompass size={900} />
+          <CompassWatermark size={900} opacity={0.04} rings={3} />
         </div>
       </div>
 
@@ -153,13 +154,15 @@ export function MintScreen() {
 
         {/* Commission button */}
         <div className="mt-8 flex flex-col items-center gap-3 fade-up delay-2">
-          <button
+          <TacticalButton
+            variant="teal"
+            glitch
             onClick={handleMint}
             disabled={!captainName.trim() || minting}
-            className="btn-tactical glitch-hover min-w-[280px]"
+            className="min-w-[280px]"
           >
             {minting ? '◇ COMMISSIONING... ◇' : '◢ SEAL COMMISSION ◣'}
-          </button>
+          </TacticalButton>
           {error && (
             <p className="font-hud text-[color:var(--blood)] text-sm">
               ⚠ {error}
@@ -237,31 +240,6 @@ function CaptainPortrait({ name }: { name: string }) {
   )
 }
 
-/* Watermark compass for behind-the-parchment ambience */
-function WatermarkCompass({ size }: { size: number }) {
-  const c = size / 2
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={c} cy={c} r={c - 2} fill="none" stroke="#C8A255" strokeWidth="1" />
-      <circle cx={c} cy={c} r={c - 40} fill="none" stroke="#C8A255" strokeWidth="0.5" />
-      <circle cx={c} cy={c} r={c - 100} fill="none" stroke="#C8A255" strokeWidth="0.5" />
-      {Array.from({ length: 32 }, (_, i) => {
-        const a = (i * Math.PI) / 16
-        return (
-          <line
-            key={i}
-            x1={c}
-            y1={c}
-            x2={c + Math.cos(a) * (c - 2)}
-            y2={c + Math.sin(a) * (c - 2)}
-            stroke="#C8A255"
-            strokeWidth="0.3"
-          />
-        )
-      })}
-    </svg>
-  )
-}
 
 function StarterItem({ icon, label, sub }: { icon: string; label: string; sub: string }) {
   return (
@@ -278,23 +256,3 @@ function StarterItem({ icon, label, sub }: { icon: string; label: string; sub: s
   )
 }
 
-function WaxSeal({ className = '' }: { className?: string }) {
-  return (
-    <div
-      className={`w-10 h-10 rounded-full pointer-events-none ${className}`}
-      style={{
-        background:
-          'radial-gradient(circle at 35% 35%, #a21a26 0%, #6b0d15 70%, #3d060a 100%)',
-        boxShadow:
-          'inset 0 2px 4px rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.5)',
-      }}
-    >
-      <div
-        className="w-full h-full flex items-center justify-center text-[#f7d98e] text-lg"
-        style={{ fontFamily: 'Cinzel, serif', textShadow: '0 1px 1px rgba(0,0,0,0.5)' }}
-      >
-        ⚓
-      </div>
-    </div>
-  )
-}
