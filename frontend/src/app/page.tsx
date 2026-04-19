@@ -4,6 +4,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useRouter } from 'next/navigation'
 import { MintScreen } from '@/components/MintScreen'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { TacticalButton } from '@/components/ui'
 
@@ -140,6 +141,13 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
           <span>LAT -04.2°S · LON 119.5°E</span>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/codex"
+            className="text-[color:var(--brass)] hover:text-[color:var(--gold)] transition-colors tracking-[0.3em]"
+          >
+            ✦ CODEX
+          </Link>
+          <span className="opacity-40">│</span>
           <span>CH //NUANSA-SHIP-1</span>
           <span className="opacity-40">│</span>
           <span>{new Date().toISOString().split('T')[0]}</span>
