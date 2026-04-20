@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@initia/icons-react": "^2.1.0",
     "@initia/initia.js": "latest",
     "@initia/interwovenkit-react": "latest",
     "@tanstack/react-query": "^5.0.0",
