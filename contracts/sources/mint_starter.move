@@ -3,21 +3,22 @@ module nuansa_ship::mint_starter {
     use std::option;
     use std::vector;
     use initia_std::simple_nft;
+    use initia_std::bigdecimal;
     use initia_std::signer;
     use nuansa_ship::captain;
     use nuansa_ship::ship;
     use nuansa_ship::crew;
     use nuansa_ship::port;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_ALREADY_MINTED: u64 = 1;
 
-    // ── Collection name constants ────────────────────────────────────────────
+    // -- Collection name constants --------------------------------------------
     const COLLECTION_CAPTAINS: vector<u8> = b"NSC";
     const COLLECTION_SHIPS:    vector<u8> = b"NSV";
     const COLLECTION_CREW:     vector<u8> = b"NSCR";
 
-    // ── Structs ──────────────────────────────────────────────────────────────
+    // -- Structs --------------------------------------------------------------
 
     struct PlayerProfile has key {
         captain_token_id:  String,
@@ -25,7 +26,7 @@ module nuansa_ship::mint_starter {
         crew_token_ids:    vector<String>,
     }
 
-    // ── Internal helper ──────────────────────────────────────────────────────
+    // -- Internal helper ------------------------------------------------------
 
     fun concat_strings(base: &String, suffix: vector<u8>): String {
         let mut_bytes = *string::bytes(base);
@@ -33,7 +34,7 @@ module nuansa_ship::mint_starter {
         string::utf8(mut_bytes)
     }
 
-    // ── Entry: initialize_collections ────────────────────────────────────────
+    // -- Entry: initialize_collections ----------------------------------------
 
     public entry fun initialize_collections(account: &signer) {
         // Captains - "NSC"
@@ -49,6 +50,7 @@ module nuansa_ship::mint_starter {
             true,   // mutable_nft_description
             true,   // mutable_nft_properties
             true,   // mutable_nft_uri
+            bigdecimal::zero(),
         );
 
         // Ships - "NSV"
@@ -64,6 +66,7 @@ module nuansa_ship::mint_starter {
             true,
             true,
             true,
+            bigdecimal::zero(),
         );
 
         // Crew - "NSCR"
@@ -79,10 +82,11 @@ module nuansa_ship::mint_starter {
             true,
             true,
             true,
+            bigdecimal::zero(),
         );
     }
 
-    // ── Entry: mint_starter_pack ─────────────────────────────────────────────
+    // -- Entry: mint_starter_pack ---------------------------------------------
 
     public entry fun mint_starter_pack(
         account:      &signer,
@@ -116,13 +120,13 @@ module nuansa_ship::mint_starter {
         });
     }
 
-    // ── View: has_profile ────────────────────────────────────────────────────
+    // -- View: has_profile ----------------------------------------------------
 
     public fun has_profile(player: address): bool {
         exists<PlayerProfile>(player)
     }
 
-    // ── View: get_profile ────────────────────────────────────────────────────
+    // -- View: get_profile ----------------------------------------------------
 
     public fun get_profile(player: address): (String, String) acquires PlayerProfile {
         let profile = borrow_global<PlayerProfile>(player);

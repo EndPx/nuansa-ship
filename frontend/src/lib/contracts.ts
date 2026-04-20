@@ -8,7 +8,11 @@
 
 import { bcs } from '@initia/initia.js'
 
-export const CONTRACT_ADDRESS = '' // filled after `minitiad tx move publish`
+// Deployed to nuansa-ship-1 rollup on 2026-04-21.
+// Bech32 (moduleAddress is required to be bech32 in MsgExecute on Move VMs).
+// Hex equivalent: 0x4224dcc266eee2869c03d7757b324ecf678ac2ed
+// Publish TX: 2155866E0F6327A938D709A2AE7044B839C15B87C4237F32FD8581F0688A4835
+export const CONTRACT_ADDRESS = 'init1ggjdesnxam3gd8qr6a6hkvjweanc4shdtpd73f'
 
 const TYPE_URL = '/initia.move.v1.MsgExecute'
 

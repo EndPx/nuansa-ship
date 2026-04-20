@@ -4,22 +4,22 @@ module nuansa_ship::captain {
     use initia_std::simple_nft;
     use initia_std::signer;
 
-    // ── Friend declarations ──────────────────────────────────────────────────
+    // -- Friend declarations --------------------------------------------------
     friend nuansa_ship::battle;
     friend nuansa_ship::mint_starter;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_ALREADY_MINTED: u64      = 1;
     const E_NOT_OWNER: u64           = 3;
 
-    // ── Constants ─────────────────────────────────────────────────────────────
+    // -- Constants -------------------------------------------------------------
     const COLLECTION_NAME: vector<u8> = b"NSC";
     const XP_PER_LEVEL: u64          = 1000;
     const MAX_LEVEL: u8               = 50;
     const MAX_STAT: u8                = 100;
     const STAT_PER_LEVEL: u8          = 5;
 
-    // ── Resource (stored at player address) ───────────────────────────────────
+    // -- Resource (stored at player address) -----------------------------------
     struct CaptainStats has key {
         leadership: u8,       // 0-100, boosts crew morale passively
         tactics: u8,          // 0-100, unlocks special maneuvers
@@ -28,7 +28,7 @@ module nuansa_ship::captain {
         level: u8,            // 1-50; level = xp / 1000
     }
 
-    // ── Mint captain NFT + store CaptainStats at player address ──────────────
+    // -- Mint captain NFT + store CaptainStats at player address --------------
     public(friend) fun mint_captain_internal(account: &signer, token_id: String) {
         let creator = signer::address_of(account);
 
@@ -54,7 +54,7 @@ module nuansa_ship::captain {
         });
     }
 
-    // ── Add XP and handle level-ups ───────────────────────────────────────────
+    // -- Add XP and handle level-ups -------------------------------------------
     public(friend) fun add_xp(player: address, amount: u64) acquires CaptainStats {
         let stats = borrow_global_mut<CaptainStats>(player);
         stats.xp = stats.xp + amount;
@@ -87,14 +87,14 @@ module nuansa_ship::captain {
         };
     }
 
-    // ── Read-only stats accessor ───────────────────────────────────────────────
+    // -- Read-only stats accessor -----------------------------------------------
     // Returns: (leadership, tactics, special_skill_id, xp, level)
     public fun get_stats(player: address): (u8, u8, u8, u64, u8) acquires CaptainStats {
         let stats = borrow_global<CaptainStats>(player);
         (stats.leadership, stats.tactics, stats.special_skill_id, stats.xp, stats.level)
     }
 
-    // ── Individual getters ─────────────────────────────────────────────────────
+    // -- Individual getters -----------------------------------------------------
     public fun get_leadership(player: address): u8 acquires CaptainStats {
         borrow_global<CaptainStats>(player).leadership
     }
@@ -103,7 +103,7 @@ module nuansa_ship::captain {
         borrow_global<CaptainStats>(player).level
     }
 
-    // ── Existence check ────────────────────────────────────────────────────────
+    // -- Existence check --------------------------------------------------------
     public fun has_captain_stats(player: address): bool {
         exists<CaptainStats>(player)
     }

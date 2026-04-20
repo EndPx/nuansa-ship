@@ -5,21 +5,21 @@ module nuansa_ship::ship {
     use initia_std::simple_nft;
     use initia_std::signer;
 
-    // ── Friend declarations ──────────────────────────────────────────────────
+    // -- Friend declarations --------------------------------------------------
     friend nuansa_ship::battle;
     friend nuansa_ship::mint_starter;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_CREW_FULL: u64              = 2;
     const E_INVALID_CLASS: u64          = 4;
 
-    // ── Ship class constants ─────────────────────────────────────────────────
+    // -- Ship class constants -------------------------------------------------
     const SHIP_CLASS_CORVETTE:    u8 = 0;
     const SHIP_CLASS_FRIGATE:     u8 = 1;
     const SHIP_CLASS_DESTROYER:   u8 = 2;
     const SHIP_CLASS_BATTLESHIP:  u8 = 3;
 
-    // ── ShipStats resource (stored at player address) ────────────────────────
+    // -- ShipStats resource (stored at player address) ------------------------
     struct ShipStats has key {
         ship_class:       u8,
         hull:             u64,
@@ -32,7 +32,7 @@ module nuansa_ship::ship {
         crew_token_ids:   vector<String>,  // max 3
     }
 
-    // ── Internal helpers: base stats per ship class ──────────────────────────
+    // -- Internal helpers: base stats per ship class --------------------------
     fun base_stats(ship_class: u8): (u64, u8, u64, u8, u8) {
         // returns (max_hull, engine, weapon_damage, weapon_range, armor)
         assert!(ship_class <= SHIP_CLASS_BATTLESHIP, E_INVALID_CLASS);
@@ -49,7 +49,7 @@ module nuansa_ship::ship {
         }
     }
 
-    // ── Mint ship NFT + store ShipStats at player address ────────────────────
+    // -- Mint ship NFT + store ShipStats at player address --------------------
     public(friend) fun mint_ship_internal(
         account:    &signer,
         token_id:   String,
@@ -86,7 +86,7 @@ module nuansa_ship::ship {
         });
     }
 
-    // ── Equip captain to ship ────────────────────────────────────────────────
+    // -- Equip captain to ship ------------------------------------------------
     public entry fun equip_captain(
         account:          &signer,
         captain_token_id: String,
@@ -96,7 +96,7 @@ module nuansa_ship::ship {
         stats.captain_token_id = captain_token_id;
     }
 
-    // ── Equip crew to ship ───────────────────────────────────────────────────
+    // -- Equip crew to ship ---------------------------------------------------
     public entry fun equip_crew(
         account:       &signer,
         crew_token_id: String,
@@ -107,7 +107,7 @@ module nuansa_ship::ship {
         vector::push_back(&mut stats.crew_token_ids, crew_token_id);
     }
 
-    // ── Take damage ──────────────────────────────────────────────────────────
+    // -- Take damage ----------------------------------------------------------
     public(friend) fun take_damage(player: address, damage: u64) acquires ShipStats {
         let stats = borrow_global_mut<ShipStats>(player);
         if (damage >= stats.hull) {
@@ -117,13 +117,13 @@ module nuansa_ship::ship {
         }
     }
 
-    // ── Reset hull to max (for battle start) ─────────────────────────────────
+    // -- Reset hull to max (for battle start) ---------------------------------
     public(friend) fun reset_hull(player: address) acquires ShipStats {
         let stats = borrow_global_mut<ShipStats>(player);
         stats.hull = stats.max_hull;
     }
 
-    // ── Accessor helpers (read-only, return values not references) ────────────
+    // -- Accessor helpers (read-only, return values not references) ------------
     public fun get_ship_class(player: address): u8 acquires ShipStats {
         borrow_global<ShipStats>(player).ship_class
     }

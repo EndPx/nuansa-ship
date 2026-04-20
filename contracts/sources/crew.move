@@ -5,35 +5,35 @@ module nuansa_ship::crew {
     use initia_std::simple_nft;
     use initia_std::signer;
 
-    // ── Friend declarations ──────────────────────────────────────────────────
+    // -- Friend declarations --------------------------------------------------
     friend nuansa_ship::battle;
     friend nuansa_ship::mint_starter;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_INVALID_CLASS: u64          = 4;
     const E_CREW_INJURED: u64           = 10;
     const E_INVALID_INDEX: u64          = 11;
 
-    // ── Role constants ───────────────────────────────────────────────────────
+    // -- Role constants -------------------------------------------------------
     const ROLE_GUNNER: u8     = 0;
     const ROLE_NAVIGATOR: u8  = 1;
     const ROLE_ENGINEER: u8   = 2;
 
-    // ── Status constants ─────────────────────────────────────────────────────
+    // -- Status constants -----------------------------------------------------
     const STATUS_READY:   u8 = 0;
     const STATUS_INJURED: u8 = 1;
     const STATUS_KO:      u8 = 2;
 
-    // ── Skill ID constants ───────────────────────────────────────────────────
+    // -- Skill ID constants ---------------------------------------------------
     const SKILL_MULTI_SHOT:        u8 = 1; // Gunner
     const SKILL_EVASIVE_MANEUVER:  u8 = 2; // Navigator
     const SKILL_EMERGENCY_REPAIR:  u8 = 3; // Engineer
 
-    // ── Fatigue thresholds ───────────────────────────────────────────────────
+    // -- Fatigue thresholds ---------------------------------------------------
     const HP_INJURED_THRESHOLD: u8 = 50;
     const HP_KO_THRESHOLD:      u8 = 0;
 
-    // ── Structs ──────────────────────────────────────────────────────────────
+    // -- Structs --------------------------------------------------------------
 
     /// Individual crew member data. Stored inside CrewRoster vector.
     struct CrewMember has store, drop, copy {
@@ -49,7 +49,7 @@ module nuansa_ship::crew {
         members: vector<CrewMember>,
     }
 
-    // ── Internal mint — called by mint_starter.move ──────────────────────────
+    // -- Internal mint - called by mint_starter.move --------------------------
     public(friend) fun mint_crew_internal(
         account: &signer,
         token_id: String,
@@ -91,7 +91,7 @@ module nuansa_ship::crew {
         };
     }
 
-    // ── Fatigue resolution — called by battle.move after each wave ───────────
+    // -- Fatigue resolution - called by battle.move after each wave -----------
     public(friend) fun resolve_fatigue(player: address, crew_index: u64) acquires CrewRoster {
         let roster = borrow_global_mut<CrewRoster>(player);
         let len = vector::length(&roster.members);
@@ -106,7 +106,7 @@ module nuansa_ship::crew {
         }
     }
 
-    // ── Resolve fatigue for all crew members ─────────────────────────────────
+    // -- Resolve fatigue for all crew members ---------------------------------
     public(friend) fun resolve_all_fatigue(player: address) acquires CrewRoster {
         let roster = borrow_global_mut<CrewRoster>(player);
         let len = vector::length(&roster.members);
@@ -124,7 +124,7 @@ module nuansa_ship::crew {
         };
     }
 
-    // ── Rest crew — called from port UI action ───────────────────────────────
+    // -- Rest crew - called from port UI action -------------------------------
     public entry fun rest_crew(
         account: &signer,
         crew_index: u64,
@@ -135,7 +135,7 @@ module nuansa_ship::crew {
         assert!(crew_index < len, E_INVALID_INDEX);
         let member = vector::borrow_mut(&mut roster.members, crew_index);
 
-        // KO crew cannot be healed by resting — requires Provisions item
+        // KO crew cannot be healed by resting - requires Provisions item
         assert!(member.status != STATUS_KO, E_CREW_INJURED);
 
         // Only act if actually injured
@@ -145,7 +145,7 @@ module nuansa_ship::crew {
         }
     }
 
-    // ── Read helpers (return values, not references) ─────────────────────────
+    // -- Read helpers (return values, not references) -------------------------
     public fun get_crew_count(player: address): u64 acquires CrewRoster {
         if (!exists<CrewRoster>(player)) {
             return 0
@@ -188,7 +188,7 @@ module nuansa_ship::crew {
         exists<CrewRoster>(player)
     }
 
-    // ── Pure helpers ─────────────────────────────────────────────────────────
+    // -- Pure helpers ---------------------------------------------------------
     fun default_skill_for_role(role: u8): u8 {
         if (role == ROLE_GUNNER)         { SKILL_MULTI_SHOT }
         else if (role == ROLE_NAVIGATOR) { SKILL_EVASIVE_MANEUVER }

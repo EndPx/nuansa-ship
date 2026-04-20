@@ -2,35 +2,35 @@ module nuansa_ship::port {
     use initia_std::signer;
     use std::vector;
 
-    // ── Friend declarations ──────────────────────────────────────────────────
+    // -- Friend declarations --------------------------------------------------
     friend nuansa_ship::battle;
     friend nuansa_ship::mint_starter;
     friend nuansa_ship::loot;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_INSUFFICIENT_MATERIALS: u64 = 8;
     const E_BUILDING_MAX_LEVEL: u64     = 9;
     const E_NOT_OWNER: u64              = 3;
     const E_INVALID_BUILDING: u64       = 12;
 
-    // ── Building type constants ──────────────────────────────────────────────
+    // -- Building type constants ----------------------------------------------
     const BUILDING_SHIPYARD:       u8 = 0;
     const BUILDING_ARMORY:         u8 = 1;
     const BUILDING_BARRACKS:       u8 = 2;
     const BUILDING_ADMIRALS_HALL:  u8 = 3;
     const BUILDING_WAREHOUSE:      u8 = 4;
 
-    // ── Item type constants ──────────────────────────────────────────────────
+    // -- Item type constants --------------------------------------------------
     const ITEM_IRON_PLANKS:    u8 = 0;
     const ITEM_STEEL_PARTS:    u8 = 1;
     const ITEM_PROVISIONS:     u8 = 2;
     const ITEM_COMMANDER_TOME: u8 = 3;
     const ITEM_TIMBER:         u8 = 4;
 
-    // ── Max building level ───────────────────────────────────────────────────
+    // -- Max building level ---------------------------------------------------
     const MAX_LEVEL: u8 = 5;
 
-    // ── Structs ──────────────────────────────────────────────────────────────
+    // -- Structs --------------------------------------------------------------
 
     struct Item has store, drop {
         item_type: u8,
@@ -50,7 +50,7 @@ module nuansa_ship::port {
         items: vector<Item>,
     }
 
-    // ── Public initializer (called from mint_starter_pack) ───────────────────
+    // -- Public initializer (called from mint_starter_pack) -------------------
     public(friend) fun init_port(account: &signer) {
         let owner = signer::address_of(account);
         move_to(account, Port {
@@ -66,7 +66,7 @@ module nuansa_ship::port {
         });
     }
 
-    // ── Entry: upgrade a building ────────────────────────────────────────────
+    // -- Entry: upgrade a building --------------------------------------------
     public entry fun upgrade_building(account: &signer, building_type: u8) acquires Port, Inventory {
         let player = signer::address_of(account);
         let port = borrow_global_mut<Port>(player);
@@ -117,7 +117,7 @@ module nuansa_ship::port {
         }
     }
 
-    // ── Inventory helpers ────────────────────────────────────────────────────
+    // -- Inventory helpers ----------------------------------------------------
     public(friend) fun add_item(account_addr: address, item_type: u8, amount: u64) acquires Inventory {
         let inv = borrow_global_mut<Inventory>(account_addr);
         let len = vector::length(&inv.items);
@@ -163,7 +163,7 @@ module nuansa_ship::port {
         assert!(false, E_INSUFFICIENT_MATERIALS);
     }
 
-    // ── Getter helpers ───────────────────────────────────────────────────────
+    // -- Getter helpers -------------------------------------------------------
     public fun get_shipyard_level(addr: address): u8 acquires Port {
         borrow_global<Port>(addr).shipyard_level
     }

@@ -9,7 +9,7 @@ module nuansa_ship::battle {
     use nuansa_ship::crew;
     use nuansa_ship::mint_starter;
 
-    // ── Error codes ──────────────────────────────────────────────────────────
+    // -- Error codes ----------------------------------------------------------
     const E_NOT_OWNER: u64              = 3;
     const E_BATTLE_NOT_ACTIVE: u64      = 6;
     const E_NOT_PLAYER_TURN: u64        = 7;
@@ -19,30 +19,30 @@ module nuansa_ship::battle {
     const E_OUT_OF_BOUNDS: u64          = 14;
     const E_NO_PROFILE: u64             = 15;
 
-    // ── Turn constants ───────────────────────────────────────────────────────
+    // -- Turn constants -------------------------------------------------------
     const TURN_PLAYER: u8 = 0;
     const TURN_ENEMY:  u8 = 1;
 
-    // ── Status constants ─────────────────────────────────────────────────────
+    // -- Status constants -----------------------------------------------------
     const STATUS_ACTIVE: u8 = 0;
     const STATUS_WON:    u8 = 1;
     const STATUS_LOST:   u8 = 2;
 
-    // ── Move type constants ──────────────────────────────────────────────────
+    // -- Move type constants --------------------------------------------------
     const MOVE_TYPE_MOVE:       u8 = 0;
     const MOVE_TYPE_ATTACK:     u8 = 1;
     const MOVE_TYPE_CREW_SKILL: u8 = 2;
 
-    // ── Grid bounds ──────────────────────────────────────────────────────────
+    // -- Grid bounds ----------------------------------------------------------
     const GRID_COLS: u8 = 10;
     const GRID_ROWS: u8 = 8;
 
-    // ── XP rewards per wave tier ─────────────────────────────────────────────
+    // -- XP rewards per wave tier ---------------------------------------------
     const XP_WAVE_EARLY: u64 = 100;   // waves 1-3
     const XP_WAVE_MID:   u64 = 200;   // waves 4-6
     const XP_WAVE_BOSS:  u64 = 500;   // waves 7+
 
-    // ── Structs ──────────────────────────────────────────────────────────────
+    // -- Structs --------------------------------------------------------------
 
     struct Enemy has store, drop {
         hp:     u64,
@@ -71,7 +71,7 @@ module nuansa_ship::battle {
         next_id: u64,
     }
 
-    // ── Internal helpers ─────────────────────────────────────────────────────
+    // -- Internal helpers -----------------------------------------------------
 
     fun manhattan_dist(x1: u8, y1: u8, x2: u8, y2: u8): u8 {
         let dx = if (x1 >= x2) { x1 - x2 } else { x2 - x1 };
@@ -198,7 +198,7 @@ module nuansa_ship::battle {
         battle.status = STATUS_WON;
     }
 
-    // ── Public entry: start_battle ───────────────────────────────────────────
+    // -- Public entry: start_battle -------------------------------------------
 
     public entry fun start_battle(account: &signer, wave: u8) acquires Battle, BattleCounter {
         let player = signer::address_of(account);
@@ -253,7 +253,7 @@ module nuansa_ship::battle {
         });
     }
 
-    // ── Public entry: submit_move ────────────────────────────────────────────
+    // -- Public entry: submit_move --------------------------------------------
 
     public entry fun submit_move(
         account:   &signer,
@@ -308,7 +308,7 @@ module nuansa_ship::battle {
         };
     }
 
-    // ── Public entry: claim_reward ───────────────────────────────────────────
+    // -- Public entry: claim_reward -------------------------------------------
 
     public entry fun claim_reward(account: &signer) acquires Battle {
         let player = signer::address_of(account);
@@ -355,7 +355,7 @@ module nuansa_ship::battle {
         } = move_from<Battle>(player);
     }
 
-    // ── View helpers ─────────────────────────────────────────────────────────
+    // -- View helpers ---------------------------------------------------------
 
     public fun battle_status(player: address): u8 acquires Battle {
         borrow_global<Battle>(player).status
