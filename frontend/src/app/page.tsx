@@ -140,18 +140,32 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
           <span className="opacity-40">│</span>
           <span>LAT -04.2°S · LON 119.5°E</span>
         </div>
-        <div className="flex items-center gap-3">
+        <nav className="flex items-center gap-3">
           <Link
             href="/codex"
             className="text-[color:var(--brass)] hover:text-[color:var(--gold)] transition-colors tracking-[0.3em]"
           >
-            ✦ CODEX
+            CODEX
+          </Link>
+          <span className="opacity-40">·</span>
+          <Link
+            href="/fleet"
+            className="text-[color:var(--brass)] hover:text-[color:var(--gold)] transition-colors tracking-[0.3em]"
+          >
+            FLEET
+          </Link>
+          <span className="opacity-40">·</span>
+          <Link
+            href="/almanac"
+            className="text-[color:var(--brass)] hover:text-[color:var(--gold)] transition-colors tracking-[0.3em]"
+          >
+            ALMANAC
           </Link>
           <span className="opacity-40">│</span>
           <span>CH //NUANSA-SHIP-1</span>
           <span className="opacity-40">│</span>
           <span>{new Date().toISOString().split('T')[0]}</span>
-        </div>
+        </nav>
       </header>
 
       {/* Main hero */}

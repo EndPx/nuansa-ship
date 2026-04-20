@@ -1,8 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CompassWatermark, TacticalButton } from '@/components/ui'
+import {
+  ArchivePage,
+  OrnamentalRule,
+  DropCap,
+  ChapterHeader,
+} from '@/components/archive/ArchivePage'
 
 /**
  * /codex — The Admiralty Archive
@@ -12,36 +17,12 @@ import { CompassWatermark, TacticalButton } from '@/components/ui'
  */
 export default function CodexPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden">
-      <StarField />
-      <AmbientGlow />
-
-      {/* Top masthead */}
-      <header className="relative z-10 px-6 md:px-16 pt-10 pb-6 border-b border-[color:var(--brass)]/20">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-hud text-xs tracking-[0.4em] text-[color:var(--teal-dim)] hover:text-[color:var(--teal-glow)] transition-colors"
-          >
-            ← RETURN TO HELM
-          </Link>
-          <div className="text-center">
-            <div className="font-hud text-[10px] tracking-[0.5em] text-[color:var(--brass)]">
-              ✦ VOLUME I ✦
-            </div>
-            <h1 className="mt-1 font-display text-2xl md:text-4xl tracking-[0.25em] text-[color:var(--ivory)]">
-              THE <span className="text-[color:var(--teal-glow)] text-glow">ADMIRALTY</span> ARCHIVE
-            </h1>
-            <div className="mt-1 font-hud text-[10px] tracking-[0.4em] text-[color:var(--brass)]">
-              ⟡ BEING A TRUE ACCOUNT OF THE NUANSA FLEET ⟡
-            </div>
-          </div>
-          <div className="font-hud text-xs tracking-[0.4em] text-[color:var(--teal-dim)] text-right">
-            FOLIO 01 · 16
-          </div>
-        </div>
-      </header>
-
+    <ArchivePage
+      volumeTag="VOLUME I"
+      title={<>THE <span className="text-[color:var(--teal-glow)] text-glow">ADMIRALTY</span> ARCHIVE</>}
+      subtitle="BEING A TRUE ACCOUNT OF THE NUANSA FLEET"
+      folio="01 · 16"
+    >
       {/* Hero — cinematic title spread */}
       <section className="relative z-10 px-6 md:px-16 py-24 md:py-32 min-h-[80vh] flex items-center">
         <div className="w-full grid md:grid-cols-[1.2fr_1fr] gap-16 items-center">
@@ -55,11 +36,21 @@ export default function CodexPage() {
               <span className="block italic text-[color:var(--brass)] text-glow-gold">Windless Sea</span>
               and the Captains who crossed it.
             </h2>
-            <p className="font-im-fell text-xl md:text-2xl leading-relaxed text-[color:var(--parchment)] max-w-xl" style={{ fontFamily: '"IM Fell English", serif' }}>
-              <DropCap letter="L" />et it be recorded: in the year the stars forgot their course, the first ironclad rose from the harbor of Nuansa, her sails sewn from storm-silk, her hull inlaid with Initia's seal.
+            <p
+              className="font-im-fell text-xl md:text-2xl leading-relaxed text-[color:var(--parchment)] max-w-xl"
+              style={{ fontFamily: '"IM Fell English", serif' }}
+            >
+              <DropCap letter="L" />
+              et it be recorded: in the year the stars forgot their course, the first ironclad rose from the harbor of Nuansa, her sails sewn from storm-silk, her hull inlaid with Initia's seal.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <TacticalButton variant="teal" glitch onClick={() => document.getElementById('chapter-1')?.scrollIntoView({ behavior: 'smooth' })}>
+              <TacticalButton
+                variant="teal"
+                glitch
+                onClick={() =>
+                  document.getElementById('chapter-1')?.scrollIntoView({ behavior: 'smooth' })
+                }
+              >
                 ◢ BEGIN THE READING ◣
               </TacticalButton>
               <Link
@@ -81,7 +72,6 @@ export default function CodexPage() {
         </div>
       </section>
 
-      {/* Decorative rule */}
       <OrnamentalRule />
 
       {/* Chapter 1 */}
@@ -93,7 +83,8 @@ export default function CodexPage() {
         body={
           <>
             <p>
-              <DropCap letter="E" />very vessel of the fleet is an alliance of four. The <em>Captain</em> — bound by oath and rank, leader of the deck. The <em>Ship</em> — her hull the bargain, her guns the argument. The <em>Crew</em> — men and women of skill: gunner, navigator, engineer. And the <em>Port</em>, where all return, where steel is forged and charts are drawn.
+              <DropCap letter="E" />
+              very vessel of the fleet is an alliance of four. The <em>Captain</em> — bound by oath and rank, leader of the deck. The <em>Ship</em> — her hull the bargain, her guns the argument. The <em>Crew</em> — men and women of skill: gunner, navigator, engineer. And the <em>Port</em>, where all return, where steel is forged and charts are drawn.
             </p>
             <p>
               No Captain sails alone. No Ship fires without a crew. No crew survives without a port to mend them. This is the First Law of the Nuansa Fleet.
@@ -118,10 +109,19 @@ export default function CodexPage() {
         body={
           <>
             <p>
-              <DropCap letter="F" />rom the Shipyard's smallest keel grows the Fleet's largest thunder. Each class a progression — the nimble <em>Corvette</em> for first blood, the <em>Frigate</em> for the middle seas, the <em>Destroyer</em> for the hard engagements, and the <em>Battleship</em> — slow, inevitable, supreme.
+              <DropCap letter="F" />
+              rom the Shipyard's smallest keel grows the Fleet's largest thunder. Each class a progression — the nimble <em>Corvette</em> for first blood, the <em>Frigate</em> for the middle seas, the <em>Destroyer</em> for the hard engagements, and the <em>Battleship</em> — slow, inevitable, supreme.
             </p>
             <p>
               The Shipyard must be raised to the fifth tier before the Battleship's blueprint will surrender itself. Patience, then, is the Admiral's first weapon.
+            </p>
+            <p className="pt-2">
+              <Link
+                href="/fleet"
+                className="inline-flex items-center gap-2 font-hud text-sm tracking-[0.3em] text-[color:var(--teal-glow)] hover:text-[color:var(--gold)] transition-colors"
+              >
+                ◈ SEE THE FULL COMPENDIUM →
+              </Link>
             </p>
           </>
         }
@@ -138,7 +138,11 @@ export default function CodexPage() {
       {/* Chapter 3 — The Waves */}
       <section className="relative z-10 px-6 md:px-16 py-20">
         <div className="max-w-5xl mx-auto">
-          <ChapterHeader number="III" title="The Waves" subtitle="Each engagement a trial, each trial a choice." />
+          <ChapterHeader
+            number="III"
+            title="The Waves"
+            subtitle="Each engagement a trial, each trial a choice."
+          />
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {WAVES.map((w) => (
               <WaveCard key={w.range} {...w} />
@@ -150,6 +154,14 @@ export default function CodexPage() {
           >
             «&nbsp;The sea does not grow gentler with victory. It grows hungrier.&nbsp;»
           </p>
+          <div className="mt-6 text-center">
+            <Link
+              href="/almanac"
+              className="inline-flex items-center gap-2 font-hud text-sm tracking-[0.3em] text-[color:var(--teal-glow)] hover:text-[color:var(--gold)] transition-colors"
+            >
+              ◈ CONSULT THE ALMANAC →
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -163,7 +175,8 @@ export default function CodexPage() {
         body={
           <>
             <p>
-              <DropCap letter="B" />eneath every hull, the chain. Beneath every chain, Initia — she who does not forget. Your Captain is not a number in a ledger she might lose; she is an <em>NFT</em>, etched in stone that no tide can wash. Your Ship is not inventory; she is property, tradeable, inheritable, mourning-able.
+              <DropCap letter="B" />
+              eneath every hull, the chain. Beneath every chain, Initia — she who does not forget. Your Captain is not a number in a ledger she might lose; she is an <em>NFT</em>, etched in stone that no tide can wash. Your Ship is not inventory; she is property, tradeable, inheritable, mourning-able.
             </p>
             <p>
               And when a battle begins, the Admiralty lends you a signet — a <em>session key</em> — so your blade swings without pausing to ask. Speed with provenance. Autonomy with receipts.
@@ -195,24 +208,20 @@ export default function CodexPage() {
         >
           The sea is open. The Admiralty is waiting. Your Ship has no hull yet — go and give her one.
         </p>
-        <div className="mt-10">
+        <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
           <Link href="/">
             <TacticalButton variant="blood" glitch>
               ◢ REPORT FOR COMMISSION ◣
             </TacticalButton>
           </Link>
+          <Link href="/fleet">
+            <TacticalButton variant="teal">
+              NEXT · THE FLEET →
+            </TacticalButton>
+          </Link>
         </div>
       </section>
-
-      {/* Footer colophon */}
-      <footer className="relative z-10 px-6 md:px-16 py-10 border-t border-[color:var(--brass)]/20 font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)] flex flex-col md:flex-row items-center justify-between gap-4">
-        <span>◉ NUANSA SHIP · INITIA HACKATHON SEASON 1</span>
-        <span className="font-im-fell italic" style={{ fontFamily: '"IM Fell English", serif' }}>
-          bound in teal & brass · 2026
-        </span>
-        <span>PART OF THE NUANSA UNIVERSE</span>
-      </footer>
-    </main>
+    </ArchivePage>
   )
 }
 
@@ -255,38 +264,6 @@ function Chapter({
   )
 }
 
-function ChapterHeader({
-  number,
-  title,
-  subtitle,
-}: {
-  number: string
-  title: string
-  subtitle: string
-}) {
-  return (
-    <>
-      <div className="flex items-baseline gap-4">
-        <span className="font-display text-7xl md:text-8xl leading-none text-[color:var(--brass)] text-glow-gold italic">
-          {number}
-        </span>
-        <span className="font-hud text-xs tracking-[0.4em] text-[color:var(--brass)]">
-          CHAPTER {number}
-        </span>
-      </div>
-      <h3 className="mt-2 font-display text-3xl md:text-5xl text-[color:var(--ivory)] tracking-wide">
-        {title}
-      </h3>
-      <p
-        className="mt-3 font-im-fell italic text-lg text-[color:var(--parchment)]/80"
-        style={{ fontFamily: '"IM Fell English", serif' }}
-      >
-        {subtitle}
-      </p>
-    </>
-  )
-}
-
 function PillarCard({ icon, label, sub }: { icon: string; label: string; sub: string }) {
   return (
     <div
@@ -307,29 +284,6 @@ function PillarCard({ icon, label, sub }: { icon: string; label: string; sub: st
   )
 }
 
-function DropCap({ letter }: { letter: string }) {
-  return (
-    <span
-      className="float-left font-display text-6xl md:text-7xl leading-[0.8] mr-2 mt-1 text-[color:var(--brass)] text-glow-gold"
-      style={{ fontFamily: 'Cinzel, serif' }}
-    >
-      {letter}
-    </span>
-  )
-}
-
-function OrnamentalRule() {
-  return (
-    <div className="relative z-10 flex items-center justify-center py-6 px-6">
-      <div className="flex items-center gap-4 text-[color:var(--brass)]/60">
-        <span className="h-px w-16 md:w-32 bg-[color:var(--brass)]/30" />
-        <span className="text-xl">◆ ⚓ ◆</span>
-        <span className="h-px w-16 md:w-32 bg-[color:var(--brass)]/30" />
-      </div>
-    </div>
-  )
-}
-
 function AdmiraltySeal() {
   return (
     <div className="relative w-[280px] h-[280px] md:w-[360px] md:h-[360px]">
@@ -344,7 +298,6 @@ function AdmiraltySeal() {
         <circle cx="180" cy="180" r="176" fill="url(#seal-g)" stroke="#C8A255" strokeWidth="1.5" />
         <circle cx="180" cy="180" r="160" fill="none" stroke="#C8A255" strokeWidth="0.5" strokeDasharray="2 6" />
         <circle cx="180" cy="180" r="130" fill="none" stroke="#52E0C4" strokeWidth="0.5" opacity="0.5" />
-        {/* Cardinal tick marks */}
         {['N', 'E', 'S', 'W'].map((c, i) => {
           const a = (i * Math.PI) / 2 - Math.PI / 2
           const x = 180 + Math.cos(a) * 148
@@ -365,13 +318,11 @@ function AdmiraltySeal() {
             </text>
           )
         })}
-        {/* Star diamonds */}
         <polygon points="180,60 188,180 180,300 172,180" fill="#52E0C4" opacity="0.9" />
         <polygon points="60,180 180,172 300,180 180,188" fill="#52E0C4" opacity="0.7" />
         <polygon points="180,90 184,180 180,270 176,180" fill="#F4A261" />
         <polygon points="90,180 180,176 270,180 180,184" fill="#F4A261" opacity="0.85" />
-        {/* Anchor sigil */}
-        <g transform="translate(180 180)" fill="#F4A261" stroke="#0A1628" strokeWidth="1">
+        <g transform="translate(180 180)">
           <circle r="18" fill="#0A1628" stroke="#C8A255" strokeWidth="2" />
           <text
             x="0"
@@ -387,67 +338,6 @@ function AdmiraltySeal() {
         </g>
       </svg>
     </div>
-  )
-}
-
-/* Star field — parallax layer of twinkling dots */
-function StarField() {
-  const [stars, setStars] = useState<{ x: number; y: number; s: number; d: number }[]>([])
-  useEffect(() => {
-    const arr = Array.from({ length: 140 }, () => ({
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      s: Math.random() * 1.5 + 0.4,
-      d: Math.random() * 6,
-    }))
-    setStars(arr)
-  }, [])
-  return (
-    <div
-      aria-hidden
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    >
-      {stars.map((st, i) => (
-        <span
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            left: `${st.x}%`,
-            top: `${st.y}%`,
-            width: `${st.s}px`,
-            height: `${st.s}px`,
-            background: i % 9 === 0 ? '#F4A261' : '#E8D5B7',
-            boxShadow: i % 9 === 0 ? '0 0 6px #F4A261' : '0 0 4px #E8D5B7',
-            opacity: 0.35 + (i % 5) * 0.1,
-            animation: `blink ${3 + (i % 5)}s ${st.d}s infinite`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function AmbientGlow() {
-  return (
-    <>
-      <div
-        className="fixed top-0 left-0 w-[60vw] h-[60vh] pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse at top left, rgba(200,162,85,0.09) 0%, transparent 55%)',
-          zIndex: 0,
-        }}
-      />
-      <div
-        className="fixed bottom-0 right-0 w-[60vw] h-[60vh] pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse at bottom right, rgba(42,157,143,0.08) 0%, transparent 55%)',
-          zIndex: 0,
-        }}
-      />
-    </>
   )
 }
 
@@ -483,10 +373,7 @@ function WaveCard({
         boxShadow: `inset 0 0 24px ${accent}10`,
       }}
     >
-      <div
-        className="font-hud text-xs tracking-[0.3em]"
-        style={{ color: accent }}
-      >
+      <div className="font-hud text-xs tracking-[0.3em]" style={{ color: accent }}>
         {range}
       </div>
       <div className="mt-2 font-display text-2xl text-[color:var(--ivory)] tracking-wide">
