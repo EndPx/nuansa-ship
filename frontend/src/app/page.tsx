@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { TacticalButton } from '@/components/ui'
+import { ChainStatus } from '@/components/ChainStatus'
 
 export default function LandingPage() {
   const { address, openConnect } = useInterwovenKit()
@@ -218,13 +219,83 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
         </div>
 
         {/* Connect button */}
-        <div className="mt-10 fade-up delay-4">
+        <div className="mt-10 fade-up delay-4 flex flex-col items-center">
           <TacticalButton variant="teal" glitch onClick={onConnect}>
-            ◢ Commission Wallet ◣
+            <span className="inline-flex items-center gap-3">
+              <img
+                src="/assets/ui/anchor_emblem.png"
+                alt=""
+                width={22}
+                height={22}
+                className="pixelated"
+              />
+              COMMISSION WALLET
+              <img
+                src="/assets/ui/anchor_emblem.png"
+                alt=""
+                width={22}
+                height={22}
+                className="pixelated"
+                style={{ transform: 'scaleX(-1)' }}
+              />
+            </span>
           </TacticalButton>
           <p className="mt-4 text-center font-mono text-xs text-[color:var(--teal-dim)] tracking-widest">
             REQUIRES INITIA TESTNET · INTERWOVENKIT
           </p>
+        </div>
+      </section>
+
+      {/* Feature tape — primitives at a glance */}
+      <section className="relative z-10 px-6 md:px-16 py-20 border-t border-[color:var(--brass)]/15">
+        <div className="max-w-6xl mx-auto text-center mb-10">
+          <div className="inline-block border border-[color:var(--brass)]/40 px-4 py-1 font-hud text-xs tracking-[0.5em] text-[color:var(--brass)]">
+            ✦ THE FLEET ON INITIA ✦
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-5">
+          <FeatureCard
+            icon="/assets/ui/anchor_emblem.png"
+            tag="ON-CHAIN"
+            title="Captain · Ship · Crew"
+            desc="Every fleet asset is an NFT on Initia Move VM. Yours to trade, inherit, or lose in battle."
+          />
+          <FeatureCard
+            icon="/assets/ui/nst_coin.png"
+            tag="SESSION KEYS"
+            title="Fast combat, verified"
+            desc="One-click auto-sign. Every move is on-chain. No popups between broadsides."
+          />
+          <FeatureCard
+            icon="/assets/ui/treasure_pouch.png"
+            tag="ROGUELITE"
+            title="Waves · Loot · Upgrade"
+            desc="Survive PvE waves, roll the drop table, forge better hulls back at port."
+          />
+          <FeatureCard
+            tag="NUANSA UNIVERSE"
+            title="A shared lore"
+            desc="Three games, three chains. Nuansa Land on Base, Nuansa FC on 0G, and us — at sea."
+          />
+        </div>
+
+        {/* Lower call-out strip */}
+        <div className="max-w-6xl mx-auto mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--brass)]/20 pt-6 font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">
+          <span>READ THE ARCHIVE:</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/codex" className="hover:text-[color:var(--gold)] transition-colors">
+              ✦ VOLUME I · CODEX
+            </Link>
+            <span className="opacity-40">·</span>
+            <Link href="/fleet" className="hover:text-[color:var(--gold)] transition-colors">
+              VOLUME II · FLEET
+            </Link>
+            <span className="opacity-40">·</span>
+            <Link href="/almanac" className="hover:text-[color:var(--gold)] transition-colors">
+              VOLUME III · ALMANAC ✦
+            </Link>
+          </div>
+          <span>✦ SEASON 1 · INITIA HACKATHON</span>
         </div>
       </section>
 
@@ -240,6 +311,56 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
         </div>
       </footer>
     </main>
+  )
+}
+
+/* ─── Feature tape card ────────────────────────────────────────────── */
+function FeatureCard({
+  icon,
+  tag,
+  title,
+  desc,
+}: {
+  icon?: string
+  tag: string
+  title: string
+  desc: string
+}) {
+  return (
+    <div
+      className="relative p-5 border border-[color:var(--brass)]/30 transition-all hover:-translate-y-1 hover:border-[color:var(--brass)]/70"
+      style={{
+        background:
+          'linear-gradient(180deg, rgba(15,30,53,0.8) 0%, rgba(8,19,32,0.95) 100%)',
+        boxShadow: 'inset 0 0 24px rgba(200,162,85,0.04)',
+      }}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        {icon ? (
+          <img
+            src={icon}
+            alt=""
+            width={40}
+            height={40}
+            className="pixelated"
+            style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}
+          />
+        ) : (
+          <div className="w-10 h-10 border border-[color:var(--brass)]/50 flex items-center justify-center text-[color:var(--brass)] text-xl font-display">
+            ✦
+          </div>
+        )}
+        <div className="font-hud text-[10px] tracking-[0.4em] text-[color:var(--brass)]">
+          {tag}
+        </div>
+      </div>
+      <h4 className="font-display text-lg text-[color:var(--ivory)] tracking-wide mb-2">
+        {title}
+      </h4>
+      <p className="font-mono text-sm text-[color:var(--parchment)]/75 leading-relaxed">
+        {desc}
+      </p>
+    </div>
   )
 }
 

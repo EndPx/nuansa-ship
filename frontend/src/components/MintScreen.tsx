@@ -4,30 +4,72 @@ import { useState } from 'react'
 import { buildMintStarterPackTx } from '@/lib/contracts'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { CompassWatermark, TacticalButton, WaxSeal } from '@/components/ui'
+import { ChainStatus } from '@/components/ChainStatus'
+import { useBalance } from '@/hooks/useBalance'
 
 export function MintScreen() {
   const [captainName, setCaptainName] = useState('')
   const [minting, setMinting] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const { address, requestTxBlock, isConnected } = useInterwovenKit()
+  const kit = useInterwovenKit() as any
+  const { requestTxBlock, isConnected } = kit
+  // Move VM requires bech32 sender; fall back to generic `address` if present
+  const bech32 = kit.initiaAddress ?? kit.address ?? null
+  const { nst, refresh: refreshBalance } = useBalance(bech32)
+
+  const fundIfEmpty = async (): Promise<boolean> => {
+    if (nst !== null && nst >= 1) return true
+    setStatus('◇ Funding your wallet from the admiralty chest…')
+    try {
+      const res = await fetch('/api/faucet', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ address: bech32 }),
+      })
+      const j = await res.json()
+      if (!res.ok || j.error) throw new Error(j.error ?? `HTTP ${res.status}`)
+      // Give the chain a beat to include the fund tx
+      await new Promise((r) => setTimeout(r, 3500))
+      await refreshBalance()
+      return true
+    } catch (e: any) {
+      setError(`Faucet failed: ${String(e?.message ?? e).slice(0, 120)}`)
+      return false
+    } finally {
+      setStatus(null)
+    }
+  }
 
   const handleMint = async () => {
     if (!captainName.trim()) return
-    if (!isConnected || !address) {
+    if (!isConnected || !bech32) {
       setError('Wallet not connected')
       return
     }
     setMinting(true)
     setError(null)
+    setStatus(null)
     try {
-      const messages = buildMintStarterPackTx(address, captainName)
+      // 1) Auto-fund if empty so fee deduction doesn't fail
+      const funded = await fundIfEmpty()
+      if (!funded) {
+        setMinting(false)
+        return
+      }
+      // 2) Broadcast the mint TX
+      setStatus('◇ Sealing your commission on-chain…')
+      const messages = buildMintStarterPackTx(bech32, captainName)
       const res = await requestTxBlock({ messages })
       console.log('Mint TX hash:', res.transactionHash)
+      setStatus('✓ Commission sealed. Weighing anchor…')
       window.location.href = '/port'
     } catch (e: any) {
       console.error('Mint failed:', e)
-      setError(e?.message ?? 'Commission failed')
+      const msg = e?.message ?? e?.toString() ?? 'Commission failed'
+      setError(String(msg).slice(0, 220))
       setMinting(false)
+      setStatus(null)
     }
   }
 
@@ -53,6 +95,11 @@ export function MintScreen() {
       <div className="absolute top-0 inset-x-0 font-hud text-[10px] text-[color:var(--brass)] tracking-[0.5em] py-3 flex justify-between px-8 border-b border-[color:var(--brass)]/20 opacity-80">
         <span>◉ ADMIRALTY ARCHIVE · NUANSA-SHIP-1</span>
         <span>WRIT № {new Date().getFullYear()}-{Math.floor(Math.random() * 9000 + 1000)}</span>
+      </div>
+
+      {/* Chain status chip (connected wallet + balance + fund-me) */}
+      <div className="absolute top-10 right-8 z-20">
+        <ChainStatus />
       </div>
 
       <div className="relative w-full max-w-2xl">
@@ -163,8 +210,13 @@ export function MintScreen() {
           >
             {minting ? '◇ COMMISSIONING... ◇' : '◢ SEAL COMMISSION ◣'}
           </TacticalButton>
+          {status && !error && (
+            <p className="font-hud text-[color:var(--teal-glow)] text-sm tracking-wider">
+              {status}
+            </p>
+          )}
           {error && (
-            <p className="font-hud text-[color:var(--blood)] text-sm">
+            <p className="font-hud text-[color:var(--blood)] text-sm max-w-md text-center leading-relaxed">
               ⚠ {error}
             </p>
           )}
