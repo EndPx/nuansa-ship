@@ -95,6 +95,37 @@ module nuansa_ship::mint_starter {
         let player = signer::address_of(account);
         assert!(!exists<PlayerProfile>(player), E_ALREADY_MINTED);
 
+        // 0. Ensure per-player NFT collections exist (simple_nft::mint looks
+        //    up the collection by the minter's address, not the deployer's -
+        //    so every new captain gets their own NSC / NSV / NSCR).
+        simple_nft::create_collection(
+            account,
+            string::utf8(b"Captains of Nuansa Ship"),
+            option::none<u64>(),
+            string::utf8(COLLECTION_CAPTAINS),
+            string::utf8(b"https://nuansaship.xyz/captain"),
+            true, false, true, true, true, true,
+            bigdecimal::zero(),
+        );
+        simple_nft::create_collection(
+            account,
+            string::utf8(b"Ships of Nuansa Ship"),
+            option::none<u64>(),
+            string::utf8(COLLECTION_SHIPS),
+            string::utf8(b"https://nuansaship.xyz/ship"),
+            true, false, true, true, true, true,
+            bigdecimal::zero(),
+        );
+        simple_nft::create_collection(
+            account,
+            string::utf8(b"Crew of Nuansa Ship"),
+            option::none<u64>(),
+            string::utf8(COLLECTION_CREW),
+            string::utf8(b"https://nuansaship.xyz/crew"),
+            true, false, true, true, true, true,
+            bigdecimal::zero(),
+        );
+
         // 1. Mint Captain NFT + CaptainStats at player address
         captain::mint_captain_internal(account, captain_name);
 
