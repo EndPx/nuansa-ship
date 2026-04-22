@@ -1,15 +1,25 @@
 import * as Phaser from 'phaser'
 import {
-  TILE_SIZE,
-  GRID_COLS,
-  GRID_ROWS,
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
-  PLAYER_SPAWN,
-  ENEMY_SPAWNS_EARLY,
-  ENEMY_SPAWNS_MID,
-  BOSS_SPAWN,
 } from '@/game/config'
+import {
+  HexCoord,
+  HEX_SIZE,
+  HEX_COLS,
+  HEX_ROWS,
+  offsetToPixel,
+  pixelToOffset,
+  hexDistance,
+  hexNeighbors,
+  hexesInRange,
+  hexVertices,
+  hexCoordEq,
+  HEX_PLAYER_SPAWN,
+  HEX_ENEMY_SPAWNS_EARLY,
+  HEX_ENEMY_SPAWNS_MID,
+  HEX_BOSS_SPAWN,
+} from '@/game/hex'
 
 interface EnemyUnit {
   sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
@@ -22,6 +32,17 @@ interface EnemyUnit {
 }
 
 type ActionMode = 'move' | 'attack' | 'skill' | null
+
+// Shadow consts so legacy square-grid code paths still compile while we
+// migrate the scene to hex. Pixel helpers below thread through
+// offsetToPixel() for anything geometry-sensitive.
+const TILE_SIZE = HEX_SIZE * 2
+const GRID_COLS = HEX_COLS
+const GRID_ROWS = HEX_ROWS
+const PLAYER_SPAWN = HEX_PLAYER_SPAWN
+const ENEMY_SPAWNS_EARLY = HEX_ENEMY_SPAWNS_EARLY
+const ENEMY_SPAWNS_MID = HEX_ENEMY_SPAWNS_MID
+const BOSS_SPAWN = HEX_BOSS_SPAWN
 
 /** Mulberry32 — cheap deterministic PRNG for procedural tile choice. */
 function seededRandom(seed: number): () => number {
@@ -46,7 +67,7 @@ export class BattleScene extends Phaser.Scene {
   private wave: number = 1
   private isPlayerTurn: boolean = true
   private actionMode: ActionMode = null
-  private highlightedTiles: Phaser.GameObjects.Rectangle[] = []
+  private highlightedTiles: Phaser.GameObjects.GameObject[] = []
   private moveRange: number = 4 // engine stat
   private attackRange: number = 2 // weapon range
 
@@ -78,13 +99,12 @@ export class BattleScene extends Phaser.Scene {
     // Spawn enemies for wave
     this.spawnEnemies()
 
-    // Handle tile click
+    // Handle hex click — pixelToOffset picks the nearest hex by centroid
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!this.isPlayerTurn) return
-      const col = Math.floor(pointer.x / TILE_SIZE)
-      const row = Math.floor(pointer.y / TILE_SIZE)
-      if (col < 0 || col >= GRID_COLS || row < 0 || row >= GRID_ROWS) return
-      this.handleTileClick(col, row)
+      const hex = pixelToOffset(pointer.x, pointer.y)
+      if (!hex) return
+      this.handleTileClick(hex.col, hex.row)
     })
 
     // Listen for action mode changes from UIScene
@@ -143,42 +163,60 @@ export class BattleScene extends Phaser.Scene {
     redGlow.fillStyle(0xe63946, 0.06)
     redGlow.fillCircle(TILE_SIZE * 8.5, CANVAS_HEIGHT / 2, 140)
 
-    // Compose a proper tilemap from the ocean-tiles spritesheet.
-    // Atlas is 4x4 = 16 frames, 32x32 each. Map tiles are 64x64, so we
-    // scale each placed tile 2x. Deterministic seed keeps the layout
-    // stable across re-renders of the same battle.
-    if (this.textures.exists('ocean-tiles')) {
-      const rand = seededRandom(0xbea7ed + this.wave)
-      for (let row = 0; row < GRID_ROWS; row++) {
-        for (let col = 0; col < GRID_COLS; col++) {
-          // Pick a frame: heavily weight the 4 corner "open water" tiles
-          // (indices 0, 3, 12, 15 in a 4x4 Wang set) and sprinkle a few
-          // feature tiles (reef, foam, shallow) for texture.
-          const roll = rand()
-          let frame: number
-          if (roll < 0.72) {
-            // base open water — rotate through corners for subtle variety
-            const corners = [0, 3, 12, 15]
-            frame = corners[Math.floor(rand() * corners.length)]
-          } else if (roll < 0.92) {
-            // edge/transition frames
-            const edges = [1, 2, 4, 7, 8, 11, 13, 14]
-            frame = edges[Math.floor(rand() * edges.length)]
-          } else {
-            // rare "inner" feature tiles
-            const features = [5, 6, 9, 10]
-            frame = features[Math.floor(rand() * features.length)]
-          }
-          const tile = this.add.image(
-            col * TILE_SIZE + TILE_SIZE / 2,
-            row * TILE_SIZE + TILE_SIZE / 2,
-            'ocean-tiles',
-            frame,
-          )
-          tile.setDisplaySize(TILE_SIZE, TILE_SIZE)
-          tile.setAlpha(0.85)
-        }
-      }
+    // Pure-graphics ocean: radial gradient dabs + animated wave lines.
+    // Avoid tileset fill for now — the generated atlas contains cliff/edge
+    // frames that turn into a jagged maze when used as open water.
+    const rand = seededRandom(0xbea7ed + this.wave)
+
+    // Soft gradient dabs to break the flat fill
+    for (let i = 0; i < 18; i++) {
+      const dab = this.add.graphics()
+      dab.fillStyle(0x1c4566, 0.22)
+      dab.fillCircle(
+        rand() * CANVAS_WIDTH,
+        rand() * CANVAS_HEIGHT,
+        40 + rand() * 60,
+      )
+    }
+
+    // Moving foam streaks (parallax wave illusion)
+    for (let i = 0; i < 10; i++) {
+      const streak = this.add.graphics()
+      const y = rand() * CANVAS_HEIGHT
+      const w = 60 + rand() * 160
+      streak.fillStyle(0x52e0c4, 0.06 + rand() * 0.06)
+      streak.fillRect(rand() * CANVAS_WIDTH, y, w, 2)
+      this.tweens.add({
+        targets: streak,
+        x: `+=${CANVAS_WIDTH / 2}`,
+        duration: 8000 + rand() * 6000,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.inOut',
+      })
+    }
+
+    // Scattered reef accents — rare, not fill. Only ~6 per map.
+    for (let i = 0; i < 6; i++) {
+      const col = Math.floor(rand() * GRID_COLS)
+      const row = Math.floor(rand() * GRID_ROWS)
+      // keep player/enemy lanes clear
+      if (row === PLAYER_SPAWN.row || (col >= 7 && row >= 3 && row <= 5)) continue
+      const reef = this.add.graphics()
+      reef.fillStyle(0x0a1628, 0.55)
+      reef.fillCircle(
+        col * TILE_SIZE + TILE_SIZE / 2 + (rand() - 0.5) * 16,
+        row * TILE_SIZE + TILE_SIZE / 2 + (rand() - 0.5) * 16,
+        8 + rand() * 10,
+      )
+      // foam halo
+      const foam = this.add.graphics()
+      foam.lineStyle(1, 0x52e0c4, 0.35)
+      foam.strokeCircle(
+        col * TILE_SIZE + TILE_SIZE / 2,
+        row * TILE_SIZE + TILE_SIZE / 2,
+        14 + rand() * 6,
+      )
     }
 
     // Animated water shimmer lines
@@ -218,39 +256,87 @@ export class BattleScene extends Phaser.Scene {
 
   private drawGrid() {
     this.gridOverlay.clear()
-    this.gridOverlay.lineStyle(1, 0x2a9d8f, 0.18)
 
-    for (let col = 0; col <= GRID_COLS; col++) {
-      this.gridOverlay.lineBetween(col * TILE_SIZE, 0, col * TILE_SIZE, CANVAS_HEIGHT)
-    }
-    for (let row = 0; row <= GRID_ROWS; row++) {
-      this.gridOverlay.lineBetween(0, row * TILE_SIZE, CANVAS_WIDTH, row * TILE_SIZE)
+    // 1) Place a hex-water sprite (or graphics fallback) on every hex.
+    // 2) Scatter a few hex-reef sprites at deterministic positions for
+    //    visual interest, skipping player + enemy spawn hexes.
+    const rand = seededRandom(0xf1ee7 + this.wave)
+    const reefCount = 4
+    const reefHexes = new Set<string>()
+    const isSpawn = (c: number, r: number) =>
+      (c === PLAYER_SPAWN.col && r === PLAYER_SPAWN.row) ||
+      [...ENEMY_SPAWNS_EARLY, ...ENEMY_SPAWNS_MID, BOSS_SPAWN].some(
+        (s) => s.col === c && s.row === r,
+      )
+    while (reefHexes.size < reefCount) {
+      const c = Math.floor(rand() * HEX_COLS)
+      const r = Math.floor(rand() * HEX_ROWS)
+      if (isSpawn(c, r)) continue
+      reefHexes.add(`${c},${r}`)
     }
 
-    // Tile coordinate markers (bottom-left of each tile)
-    const marker = this.add.graphics()
-    marker.fillStyle(0x2a9d8f, 0.3)
-    for (let col = 0; col < GRID_COLS; col++) {
-      for (let row = 0; row < GRID_ROWS; row++) {
-        marker.fillRect(col * TILE_SIZE + 2, row * TILE_SIZE + 2, 2, 2)
+    const hasHexWater = this.textures.exists('hex-water')
+    const hasHexReef = this.textures.exists('hex-reef')
+    const tileDisplay = HEX_SIZE * 2.1 // slightly overlap neighbours to kill seams
+
+    for (let col = 0; col < HEX_COLS; col++) {
+      for (let row = 0; row < HEX_ROWS; row++) {
+        const { x, y } = offsetToPixel(col, row)
+        const isReef = reefHexes.has(`${col},${row}`) && hasHexReef
+        const key = isReef ? 'hex-reef' : 'hex-water'
+        if (isReef || hasHexWater) {
+          const tile = this.add.image(x, y, key)
+          tile.setDisplaySize(tileDisplay, tileDisplay)
+          tile.setDepth(-2)
+          tile.setAlpha(isReef ? 0.95 : 0.9)
+        } else {
+          // Graphics fallback when sprites failed to load
+          const verts = hexVertices(x, y, HEX_SIZE - 2)
+          const fill = this.add.graphics()
+          fill.fillStyle((col + row) & 1 ? 0x0e2239 : 0x0a1a2e, 0.55)
+          fill.beginPath()
+          fill.moveTo(verts[0][0], verts[0][1])
+          for (let i = 1; i < verts.length; i++) fill.lineTo(verts[i][0], verts[i][1])
+          fill.closePath()
+          fill.fillPath()
+          fill.setDepth(-2)
+        }
       }
     }
+
+    // Hex outline overlay for readability
+    this.gridOverlay.lineStyle(1, 0x2a9d8f, 0.35)
+    for (let col = 0; col < HEX_COLS; col++) {
+      for (let row = 0; row < HEX_ROWS; row++) {
+        const { x, y } = offsetToPixel(col, row)
+        const verts = hexVertices(x, y, HEX_SIZE - 1)
+        this.gridOverlay.beginPath()
+        this.gridOverlay.moveTo(verts[0][0], verts[0][1])
+        for (let i = 1; i < verts.length; i++) {
+          this.gridOverlay.lineTo(verts[i][0], verts[i][1])
+        }
+        this.gridOverlay.closePath()
+        this.gridOverlay.strokePath()
+      }
+    }
+    this.gridOverlay.setDepth(0)
   }
 
   private spawnPlayer() {
-    const x = this.playerCol * TILE_SIZE + TILE_SIZE / 2
-    const y = this.playerRow * TILE_SIZE + TILE_SIZE / 2
+    const { x, y } = offsetToPixel(this.playerCol, this.playerRow)
+    const sz = HEX_SIZE * 1.4
 
     if (this.textures.exists('ship-player')) {
       const frames = this.textures.get('ship-player').getFrameNames()
       const frameKey = frames.length > 0 ? frames[0] : undefined
       this.playerSprite = this.add.sprite(x, y, 'ship-player', frameKey)
-      this.playerSprite.setDisplaySize(TILE_SIZE - 8, TILE_SIZE - 8)
+      this.playerSprite.setDisplaySize(sz, sz)
     } else {
       // Fallback rectangle
-      this.playerSprite = this.add.rectangle(x, y, TILE_SIZE - 8, TILE_SIZE - 8, 0x2a9d8f)
+      this.playerSprite = this.add.rectangle(x, y, sz, sz, 0x2a9d8f)
       ;(this.playerSprite as Phaser.GameObjects.Rectangle).setStrokeStyle(2, 0x66c3b7)
     }
+    this.playerSprite.setDepth(5)
   }
 
   private spawnEnemies() {
@@ -277,8 +363,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     spawns.forEach((spawn) => {
-      const x = spawn.col * TILE_SIZE + TILE_SIZE / 2
-      const y = spawn.row * TILE_SIZE + TILE_SIZE / 2
+      const { x, y } = offsetToPixel(spawn.col, spawn.row)
+      const sz = isBoss ? HEX_SIZE * 1.7 : HEX_SIZE * 1.4
 
       let sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
       const textureKey = isBoss ? 'ship-boss' : 'ship-enemy'
@@ -287,15 +373,17 @@ export class BattleScene extends Phaser.Scene {
         const frames = this.textures.get(textureKey).getFrameNames()
         const frameKey = frames.length > 0 ? frames[0] : undefined
         sprite = this.add.sprite(x, y, textureKey, frameKey)
-        sprite.setDisplaySize(TILE_SIZE - 8, TILE_SIZE - 8)
+        sprite.setDisplaySize(sz, sz)
       } else {
-        sprite = this.add.rectangle(x, y, TILE_SIZE - 8, TILE_SIZE - 8, isBoss ? 0x8b0000 : 0xcc3333)
+        sprite = this.add.rectangle(x, y, sz, sz, isBoss ? 0x8b0000 : 0xcc3333)
         ;(sprite as Phaser.GameObjects.Rectangle).setStrokeStyle(2, 0xff6666)
       }
+      sprite.setDepth(5)
 
       // HP bar above enemy
       const hpBar = this.add.graphics()
-      this.drawEnemyHpBar(hpBar, x, y - TILE_SIZE / 2 + 4, hp, hp)
+      hpBar.setDepth(6)
+      this.drawEnemyHpBar(hpBar, x, y - HEX_SIZE + 4, hp, hp)
 
       this.enemies.push({
         sprite,
@@ -344,18 +432,17 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private tryMove(col: number, row: number) {
-    const dist = Math.abs(col - this.playerCol) + Math.abs(row - this.playerRow)
+    const dist = hexDistance({ col, row }, { col: this.playerCol, row: this.playerRow })
     if (dist > this.moveRange || dist === 0) return
 
     // Check not occupied by enemy
     const blocked = this.enemies.some((e) => e.alive && e.col === col && e.row === row)
     if (blocked) return
 
-    // Move player
+    // Move player to hex center
     this.playerCol = col
     this.playerRow = row
-    const x = col * TILE_SIZE + TILE_SIZE / 2
-    const y = row * TILE_SIZE + TILE_SIZE / 2
+    const { x, y } = offsetToPixel(col, row)
 
     this.tweens.add({
       targets: this.playerSprite,
@@ -380,7 +467,7 @@ export class BattleScene extends Phaser.Scene {
     )
     if (!targetEnemy) return
 
-    const dist = Math.abs(col - this.playerCol) + Math.abs(row - this.playerRow)
+    const dist = hexDistance({ col, row }, { col: this.playerCol, row: this.playerRow })
     if (dist > this.attackRange) return
 
     // Deal damage
@@ -397,9 +484,8 @@ export class BattleScene extends Phaser.Scene {
     })
 
     // Update HP bar
-    const ex = targetEnemy.col * TILE_SIZE + TILE_SIZE / 2
-    const ey = targetEnemy.row * TILE_SIZE + TILE_SIZE / 2
-    this.drawEnemyHpBar(targetEnemy.hpBar!, ex, ey - TILE_SIZE / 2 + 4, targetEnemy.hp, targetEnemy.maxHp)
+    const { x: ex, y: ey } = offsetToPixel(targetEnemy.col, targetEnemy.row)
+    this.drawEnemyHpBar(targetEnemy.hpBar!, ex, ey - HEX_SIZE + 4, targetEnemy.hp, targetEnemy.maxHp)
 
     this.emitBattleLog('attack', `Cannons fired at (${col}, ${row})! ${damage} damage dealt.`)
 
@@ -411,7 +497,7 @@ export class BattleScene extends Phaser.Scene {
       // Explosion effect
       if (this.textures.exists('explosion')) {
         const explosion = this.add.sprite(ex, ey, 'explosion')
-        explosion.setDisplaySize(TILE_SIZE, TILE_SIZE)
+        explosion.setDisplaySize(HEX_SIZE * 1.8, HEX_SIZE * 1.8)
         this.time.delayedCall(500, () => explosion.destroy())
       }
 
@@ -441,7 +527,7 @@ export class BattleScene extends Phaser.Scene {
     )
     if (!targetEnemy) return
 
-    const dist = Math.abs(col - this.playerCol) + Math.abs(row - this.playerRow)
+    const dist = hexDistance({ col, row }, { col: this.playerCol, row: this.playerRow })
     if (dist > this.attackRange) return
 
     const damage = 90 // skill damage (higher than normal)
@@ -457,9 +543,8 @@ export class BattleScene extends Phaser.Scene {
       repeat: 1,
     })
 
-    const ex = targetEnemy.col * TILE_SIZE + TILE_SIZE / 2
-    const ey = targetEnemy.row * TILE_SIZE + TILE_SIZE / 2
-    this.drawEnemyHpBar(targetEnemy.hpBar!, ex, ey - TILE_SIZE / 2 + 4, targetEnemy.hp, targetEnemy.maxHp)
+    const { x: ex, y: ey } = offsetToPixel(targetEnemy.col, targetEnemy.row)
+    this.drawEnemyHpBar(targetEnemy.hpBar!, ex, ey - HEX_SIZE + 4, targetEnemy.hp, targetEnemy.maxHp)
 
     this.emitBattleLog('skill', `Crew skill activated! ${damage} damage dealt.`)
 
@@ -484,55 +569,42 @@ export class BattleScene extends Phaser.Scene {
 
   private showMoveRange() {
     this.clearHighlights()
-    for (let col = 0; col < GRID_COLS; col++) {
-      for (let row = 0; row < GRID_ROWS; row++) {
-        const dist = Math.abs(col - this.playerCol) + Math.abs(row - this.playerRow)
-        if (dist > 0 && dist <= this.moveRange) {
-          const blocked = this.enemies.some((e) => e.alive && e.col === col && e.row === row)
-          if (!blocked) {
-            const highlight = this.add.rectangle(
-              col * TILE_SIZE + TILE_SIZE / 2,
-              row * TILE_SIZE + TILE_SIZE / 2,
-              TILE_SIZE - 2,
-              TILE_SIZE - 2,
-              0x2a9d8f,
-              0.2
-            )
-            highlight.setStrokeStyle(1, 0x2a9d8f, 0.5)
-            this.highlightedTiles.push(highlight)
-          }
-        }
-      }
+    const reach = hexesInRange({ col: this.playerCol, row: this.playerRow }, this.moveRange)
+    for (const hex of reach) {
+      const blocked = this.enemies.some((e) => e.alive && e.col === hex.col && e.row === hex.row)
+      if (!blocked) this.drawHexHighlight(hex.col, hex.row, 0x2a9d8f, 0.18, 0.5)
     }
   }
 
   private showAttackRange() {
     this.clearHighlights()
-    for (let col = 0; col < GRID_COLS; col++) {
-      for (let row = 0; row < GRID_ROWS; row++) {
-        const dist = Math.abs(col - this.playerCol) + Math.abs(row - this.playerRow)
-        if (dist > 0 && dist <= this.attackRange) {
-          const hasEnemy = this.enemies.some((e) => e.alive && e.col === col && e.row === row)
-          const color = hasEnemy ? 0xcc3333 : 0xcc3333
-          const alpha = hasEnemy ? 0.3 : 0.1
-          const highlight = this.add.rectangle(
-            col * TILE_SIZE + TILE_SIZE / 2,
-            row * TILE_SIZE + TILE_SIZE / 2,
-            TILE_SIZE - 2,
-            TILE_SIZE - 2,
-            color,
-            alpha
-          )
-          highlight.setStrokeStyle(1, 0xcc3333, 0.5)
-          this.highlightedTiles.push(highlight)
-        }
-      }
+    const reach = hexesInRange({ col: this.playerCol, row: this.playerRow }, this.attackRange)
+    for (const hex of reach) {
+      const hasEnemy = this.enemies.some((e) => e.alive && e.col === hex.col && e.row === hex.row)
+      this.drawHexHighlight(hex.col, hex.row, 0xcc3333, hasEnemy ? 0.32 : 0.1, 0.6)
     }
   }
 
   private clearHighlights() {
-    this.highlightedTiles.forEach((h) => h.destroy())
+    this.highlightedTiles.forEach((h) => (h as Phaser.GameObjects.GameObject).destroy())
     this.highlightedTiles = []
+  }
+
+  /** Draw a filled hex polygon outline at the given offset coords. */
+  private drawHexHighlight(col: number, row: number, color: number, fillAlpha: number, lineAlpha = 0.6) {
+    const { x, y } = offsetToPixel(col, row)
+    const verts = hexVertices(x, y, HEX_SIZE - 3)
+    const g = this.add.graphics()
+    g.fillStyle(color, fillAlpha)
+    g.lineStyle(2, color, lineAlpha)
+    g.beginPath()
+    g.moveTo(verts[0][0], verts[0][1])
+    for (let i = 1; i < verts.length; i++) g.lineTo(verts[i][0], verts[i][1])
+    g.closePath()
+    g.fillPath()
+    g.strokePath()
+    g.setDepth(2)
+    this.highlightedTiles.push(g)
   }
 
   private endPlayerTurn() {
@@ -552,7 +624,7 @@ export class BattleScene extends Phaser.Scene {
     this.enemies.forEach((enemy) => {
       if (!enemy.alive) return
 
-      const dist = Math.abs(enemy.col - this.playerCol) + Math.abs(enemy.row - this.playerRow)
+      const dist = hexDistance({ col: enemy.col, row: enemy.row }, { col: this.playerCol, row: this.playerRow })
       const enemyRange = this.wave <= 3 ? 2 : this.wave <= 6 ? 3 : 4
       const enemyDamage = this.wave <= 3 ? 40 : this.wave <= 6 ? 70 : 150
 
@@ -583,40 +655,38 @@ export class BattleScene extends Phaser.Scene {
           return
         }
       } else {
-        // Move toward player
-        let dx = Math.sign(this.playerCol - enemy.col)
-        let dy = Math.sign(this.playerRow - enemy.row)
+        // Move toward player — pick the hex neighbor that minimizes
+        // hex distance to the player, skipping hexes blocked by an ally.
+        const here: HexCoord = { col: enemy.col, row: enemy.row }
+        const target: HexCoord = { col: this.playerCol, row: this.playerRow }
+        const candidates = hexNeighbors(here).filter(
+          (n) =>
+            !hexCoordEq(n, target) &&
+            !this.enemies.some((e) => e.alive && e !== enemy && e.col === n.col && e.row === n.row),
+        )
+        if (candidates.length > 0) {
+          candidates.sort((a, b) => hexDistance(a, target) - hexDistance(b, target))
+          const best = candidates[0]
+          // only move if this actually gets us closer to the player
+          if (hexDistance(best, target) < hexDistance(here, target)) {
+            enemy.col = best.col
+            enemy.row = best.row
+            const { x, y } = offsetToPixel(best.col, best.row)
 
-        const newCol = enemy.col + dx
-        const newRow = enemy.row + dy
+            this.tweens.add({
+              targets: enemy.sprite,
+              x,
+              y,
+              duration: 300,
+              ease: 'Power2',
+            })
 
-        // Check bounds and not occupied
-        if (
-          newCol >= 0 && newCol < GRID_COLS &&
-          newRow >= 0 && newRow < GRID_ROWS &&
-          !(newCol === this.playerCol && newRow === this.playerRow) &&
-          !this.enemies.some((e) => e.alive && e !== enemy && e.col === newCol && e.row === newRow)
-        ) {
-          enemy.col = newCol
-          enemy.row = newRow
+            if (enemy.hpBar) {
+              this.drawEnemyHpBar(enemy.hpBar, x, y - HEX_SIZE + 4, enemy.hp, enemy.maxHp)
+            }
 
-          const x = newCol * TILE_SIZE + TILE_SIZE / 2
-          const y = newRow * TILE_SIZE + TILE_SIZE / 2
-
-          this.tweens.add({
-            targets: enemy.sprite,
-            x,
-            y,
-            duration: 300,
-            ease: 'Power2',
-          })
-
-          // Move HP bar
-          if (enemy.hpBar) {
-            this.drawEnemyHpBar(enemy.hpBar, x, y - TILE_SIZE / 2 + 4, enemy.hp, enemy.maxHp)
+            this.emitBattleLog('enemy', `Enemy advances to hex (${best.col}, ${best.row})`)
           }
-
-          this.emitBattleLog('enemy', `Enemy moves to (${newCol}, ${newRow})`)
         }
       }
     })

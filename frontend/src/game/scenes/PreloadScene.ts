@@ -60,6 +60,10 @@ export class PreloadScene extends Phaser.Scene {
     // Effects
     this.load.atlas('explosion', '/assets/effects/explosion.png', '/assets/effects/explosion.json')
 
+    // Hex tiles (pixellab-generated 96x96 hex shapes for battle grid)
+    this.load.image('hex-water', '/assets/ui/hex_water.png')
+    this.load.image('hex-reef', '/assets/ui/hex_reef.png')
+
     // Buildings
     this.load.image('building-shipyard', '/assets/buildings/shipyard.png')
     this.load.image('building-armory', '/assets/buildings/armory.png')
