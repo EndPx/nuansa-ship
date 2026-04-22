@@ -15,11 +15,21 @@ export function useAutoSign() {
     if (!isConnected) {
       throw new Error('Wallet not connected')
     }
-    if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
-      // Already granted — skip
-      return
+    // Always disable first (swallow errors — session may not exist yet),
+    // then re-enable with the explicit permissions list. This guarantees
+    // the session grant covers /initia.move.v1.MsgExecute — a prior
+    // permission-less grant would otherwise keep falling through to the
+    // Confirm-tx modal on every move.
+    try {
+      if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
+        await autoSign.disable(NUANSA_CHAIN_ID)
+      }
+    } catch {
+      // ignore "authorization not found" — the skill doc says so
     }
-    await autoSign.enable(NUANSA_CHAIN_ID)
+    await (autoSign.enable as any)(NUANSA_CHAIN_ID, {
+      permissions: ['/initia.move.v1.MsgExecute'],
+    })
   }
 
   const endBattleSession = async () => {

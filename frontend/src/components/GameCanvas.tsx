@@ -48,15 +48,24 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
     }
   }, [initialScene])
 
-  // Ensure the session key is enabled on entering BattleScene so
-  // move/attack/skill broadcasts don't spawn a Confirm-tx modal each time.
+  // Ensure the session key is enabled (with the right permissions) on
+  // entering BattleScene so move/attack/skill broadcasts don't spawn
+  // a Confirm-tx modal each time. startBattleSession() internally
+  // disables any stale permission-less session before re-enabling
+  // with /initia.move.v1.MsgExecute permission, so this is safe to
+  // call even if an old session was already flagged "enabled".
   useEffect(() => {
     if (initialScene !== 'BattleScene' || !isConnected) return
-    if (sessionActive) return
+    let cancelled = false
     startBattleSession().catch((err) => {
-      console.warn('Auto-sign session denied or unavailable:', err)
+      if (!cancelled) console.warn('Auto-sign session denied or unavailable:', err)
     })
-  }, [initialScene, isConnected, sessionActive, startBattleSession])
+    return () => {
+      cancelled = true
+    }
+    // Run once per connection — if isConnected flips we re-provision.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialScene, isConnected])
 
   // Bridge Phaser battle events to signAndBroadcast
   useEffect(() => {
