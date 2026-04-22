@@ -333,7 +333,9 @@ export class BattleScene extends Phaser.Scene {
     const sz = HEX_SIZE * 1.4
 
     // Shadow first, so the sprite sits on top of it
-    this.playerShadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, 0.45)
+    // Shadow sits directly beneath the ship (no horizontal offset) so
+    // it reads as the hull's cast shadow during the idle bob.
+    this.playerShadow = this.add.ellipse(x, y + 4, sz * 0.75, sz * 0.28, 0x000000, 0.4)
     this.playerShadow.setDepth(3)
 
     if (this.textures.exists('ship-player-top')) {
@@ -359,16 +361,8 @@ export class BattleScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
     })
-    // Subtle rotational sway with the water — ±2° on a different period
-    ;(this.playerSprite as any).rotation = 0
-    this.tweens.add({
-      targets: this.playerSprite,
-      rotation: (2 * Math.PI) / 180, // +2 degrees
-      duration: 2100,
-      ease: 'Sine.inOut',
-      yoyo: true,
-      repeat: -1,
-    })
+    // (Rotation sway removed — decouples from shadow and caused the
+    // boss ship to cycle. Vertical bob + foam wake is enough life.)
   }
 
   private spawnEnemies() {
@@ -399,7 +393,7 @@ export class BattleScene extends Phaser.Scene {
       const sz = isBoss ? HEX_SIZE * 1.7 : HEX_SIZE * 1.4
 
       // Drop shadow
-      const shadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, isBoss ? 0.55 : 0.45)
+      const shadow = this.add.ellipse(x, y + 4, sz * 0.75, sz * 0.28, 0x000000, isBoss ? 0.5 : 0.4)
       shadow.setDepth(3)
 
       let sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
@@ -429,16 +423,9 @@ export class BattleScene extends Phaser.Scene {
         yoyo: true,
         repeat: -1,
       })
-      // Enemy rotates the opposite way so the battlefield feels alive
-      ;(sprite as any).rotation = Math.PI // enemy ships face down
-      this.tweens.add({
-        targets: sprite,
-        rotation: Math.PI - (2 * Math.PI) / 180,
-        duration: 2300 + spawn.row * 140,
-        ease: 'Sine.inOut',
-        yoyo: true,
-        repeat: -1,
-      })
+      // (No rotation sway — the sprite art already bakes bow direction;
+      // the tween previously caused the boss to spin because Phaser read
+      // a starting rotation of 0 instead of the PI we set.)
 
       const hpBar = this.add.graphics()
       hpBar.setDepth(6)
@@ -530,8 +517,8 @@ export class BattleScene extends Phaser.Scene {
     // Shadow follows with the ship but stays offset
     this.tweens.add({
       targets: this.playerShadow,
-      x: x + 3,
-      y: y + 6,
+      x,
+      y: y + 4,
       duration: 300,
       ease: 'Power2',
     })
