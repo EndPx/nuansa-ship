@@ -206,10 +206,10 @@ module nuansa_ship::battle {
         // Must have a profile to battle
         assert!(mint_starter::has_profile(player), E_NO_PROFILE);
 
-        // Ensure no existing active battle
+        // Always overwrite any existing battle resource - lets the player
+        // retry/reset at will instead of locking them out with
+        // E_BATTLE_ALREADY_EXISTS when a prior run left status=ACTIVE.
         if (exists<Battle>(player)) {
-            let existing = borrow_global<Battle>(player);
-            assert!(existing.status != STATUS_ACTIVE, E_BATTLE_ALREADY_EXISTS);
             let Battle {
                 id: _, player: _, wave: _, player_hp: _,
                 player_x: _, player_y: _, player_dmg: _, player_range: _,
