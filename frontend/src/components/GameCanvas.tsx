@@ -13,6 +13,8 @@ import {
   buildClaimRewardTx,
   CONTRACT_ADDRESS,
 } from '@/lib/contracts'
+import { NUANSA_CHAIN_ID } from '@/components/WalletProvider'
+import { useAutoSign } from '@/hooks/useAutoSign'
 
 interface GameCanvasProps {
   initialScene?: string
@@ -20,7 +22,11 @@ interface GameCanvasProps {
 
 export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvasProps) {
   const gameRef = useRef<Phaser.Game | null>(null)
-  const { address, isConnected, requestTxSync } = useInterwovenKit()
+  const kit = useInterwovenKit() as any
+  const { isConnected, requestTxSync } = kit
+  // Move VM requires bech32 sender; fall back to `address` if initiaAddress missing
+  const address: string | undefined = kit.initiaAddress ?? kit.address
+  const { startBattleSession, isEnabled: sessionActive } = useAutoSign()
 
   useEffect(() => {
     if (gameRef.current) return
@@ -42,6 +48,16 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
     }
   }, [initialScene])
 
+  // Ensure the session key is enabled on entering BattleScene so
+  // move/attack/skill broadcasts don't spawn a Confirm-tx modal each time.
+  useEffect(() => {
+    if (initialScene !== 'BattleScene' || !isConnected) return
+    if (sessionActive) return
+    startBattleSession().catch((err) => {
+      console.warn('Auto-sign session denied or unavailable:', err)
+    })
+  }, [initialScene, isConnected, sessionActive, startBattleSession])
+
   // Bridge Phaser battle events to signAndBroadcast
   useEffect(() => {
     if (initialScene !== 'BattleScene') return
@@ -53,7 +69,16 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
         return
       }
       try {
-        const hash = await requestTxSync({ messages })
+        // `autoSign: true` makes InterwovenKit sign without opening the
+        // confirm-tx modal when a session key for this chain is active.
+        // `feeDenom: 'umin'` avoids the fee-selection prompt. `chainId`
+        // is required so the kit routes to the right rollup.
+        const hash = await requestTxSync({
+          chainId: NUANSA_CHAIN_ID,
+          autoSign: true,
+          feeDenom: 'umin',
+          messages,
+        })
         console.log(`[${tag}] TX hash:`, hash)
         window.dispatchEvent(
           new CustomEvent('chain:confirmed', { detail: { tag, hash } }),
@@ -69,18 +94,22 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
     }
 
     const onMove = (e: Event) => {
+      if (!address) return
       const { x, y } = (e as CustomEvent).detail || {}
       broadcast(buildSubmitMoveTx(address, 0, x, y), 'submit_move:move')
     }
     const onAttack = (e: Event) => {
+      if (!address) return
       const { x, y } = (e as CustomEvent).detail || {}
       broadcast(buildSubmitMoveTx(address, 1, x, y), 'submit_move:attack')
     }
     const onSkill = (e: Event) => {
+      if (!address) return
       const { x, y, slot } = (e as CustomEvent).detail || {}
       broadcast(buildSubmitMoveTx(address, 2, x ?? slot ?? 0, y ?? 0), 'submit_move:skill')
     }
     const onClaim = () => {
+      if (!address) return
       broadcast(buildClaimRewardTx(address), 'claim_reward')
     }
 

@@ -11,6 +11,7 @@ import {
   buildStartBattleTx,
   CONTRACT_ADDRESS,
 } from '@/lib/contracts'
+import { NUANSA_CHAIN_ID } from '@/components/WalletProvider'
 
 interface BattleState {
   id: number | null
@@ -29,7 +30,10 @@ interface UseBattleResult {
 }
 
 export function useBattle(): UseBattleResult {
-  const { address, isConnected, requestTxSync } = useInterwovenKit()
+  const kit = useInterwovenKit() as any
+  const { isConnected, requestTxSync } = kit
+  // Move VM requires bech32 sender for MsgExecute
+  const address: string | undefined = kit.initiaAddress ?? kit.address
   const [battle, setBattle] = useState<BattleState>({
     id: null,
     wave: 1,
@@ -45,7 +49,12 @@ export function useBattle(): UseBattleResult {
         console.log(`[${tag}] would broadcast`, messages)
         return
       }
-      const hash = await requestTxSync({ messages })
+      const hash = await requestTxSync({
+        chainId: NUANSA_CHAIN_ID,
+        autoSign: true,
+        feeDenom: 'umin',
+        messages,
+      })
       console.log(`[${tag}] TX hash:`, hash)
     },
     [address, isConnected, requestTxSync],
