@@ -23,6 +23,7 @@ import {
 
 interface EnemyUnit {
   sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
+  shadow?: Phaser.GameObjects.Ellipse
   col: number
   row: number
   hp: number
@@ -59,6 +60,8 @@ function seededRandom(seed: number): () => number {
 export class BattleScene extends Phaser.Scene {
   private gridOverlay!: Phaser.GameObjects.Graphics
   private playerSprite!: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
+  private playerShadow!: Phaser.GameObjects.Ellipse
+  private playerIdleTween?: Phaser.Tweens.Tween
   private playerCol: number = PLAYER_SPAWN.col
   private playerRow: number = PLAYER_SPAWN.row
   private playerHp: number = 500
@@ -92,6 +95,9 @@ export class BattleScene extends Phaser.Scene {
     // Draw grid overlay
     this.gridOverlay = this.add.graphics()
     this.drawGrid()
+
+    // Slow parallax shine drifting across the water
+    this.spawnParallaxShine()
 
     // Spawn player ship
     this.spawnPlayer()
@@ -326,17 +332,30 @@ export class BattleScene extends Phaser.Scene {
     const { x, y } = offsetToPixel(this.playerCol, this.playerRow)
     const sz = HEX_SIZE * 1.4
 
+    // Shadow first, so the sprite sits on top of it
+    this.playerShadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, 0.45)
+    this.playerShadow.setDepth(3)
+
     if (this.textures.exists('ship-player')) {
       const frames = this.textures.get('ship-player').getFrameNames()
       const frameKey = frames.length > 0 ? frames[0] : undefined
       this.playerSprite = this.add.sprite(x, y, 'ship-player', frameKey)
       this.playerSprite.setDisplaySize(sz, sz)
     } else {
-      // Fallback rectangle
       this.playerSprite = this.add.rectangle(x, y, sz, sz, 0x2a9d8f)
       ;(this.playerSprite as Phaser.GameObjects.Rectangle).setStrokeStyle(2, 0x66c3b7)
     }
     this.playerSprite.setDepth(5)
+
+    // Gentle idle bob — ship rises ~2px and settles, shadow stays put
+    this.playerIdleTween = this.tweens.add({
+      targets: this.playerSprite,
+      y: y - 2,
+      duration: 1400,
+      ease: 'Sine.inOut',
+      yoyo: true,
+      repeat: -1,
+    })
   }
 
   private spawnEnemies() {
@@ -366,6 +385,10 @@ export class BattleScene extends Phaser.Scene {
       const { x, y } = offsetToPixel(spawn.col, spawn.row)
       const sz = isBoss ? HEX_SIZE * 1.7 : HEX_SIZE * 1.4
 
+      // Drop shadow
+      const shadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, isBoss ? 0.55 : 0.45)
+      shadow.setDepth(3)
+
       let sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
       const textureKey = isBoss ? 'ship-boss' : 'ship-enemy'
 
@@ -380,13 +403,23 @@ export class BattleScene extends Phaser.Scene {
       }
       sprite.setDepth(5)
 
-      // HP bar above enemy
+      // Subtle idle bob — offset from player so they don't sync
+      this.tweens.add({
+        targets: sprite,
+        y: y - (isBoss ? 3 : 2),
+        duration: 1600 + spawn.col * 120,
+        ease: 'Sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      })
+
       const hpBar = this.add.graphics()
       hpBar.setDepth(6)
       this.drawEnemyHpBar(hpBar, x, y - HEX_SIZE + 4, hp, hp)
 
       this.enemies.push({
         sprite,
+        shadow,
         col: spawn.col,
         row: spawn.row,
         hp,
@@ -440,9 +473,14 @@ export class BattleScene extends Phaser.Scene {
     if (blocked) return
 
     // Move player to hex center
+    const fromX = (this.playerSprite as any).x as number
+    const fromY = (this.playerSprite as any).y as number
     this.playerCol = col
     this.playerRow = row
     const { x, y } = offsetToPixel(col, row)
+
+    // Stop idle bob so the move tween runs cleanly; restart after arrival
+    this.playerIdleTween?.stop()
 
     this.tweens.add({
       targets: this.playerSprite,
@@ -450,7 +488,28 @@ export class BattleScene extends Phaser.Scene {
       y,
       duration: 300,
       ease: 'Power2',
+      onComplete: () => {
+        // Resume idle bob at the new base y
+        this.playerIdleTween = this.tweens.add({
+          targets: this.playerSprite,
+          y: y - 2,
+          duration: 1400,
+          ease: 'Sine.inOut',
+          yoyo: true,
+          repeat: -1,
+        })
+      },
     })
+    // Shadow follows with the ship but stays offset
+    this.tweens.add({
+      targets: this.playerShadow,
+      x: x + 3,
+      y: y + 6,
+      duration: 300,
+      ease: 'Power2',
+    })
+    // Foam wake particles along the path
+    this.spawnFoamWake(fromX, fromY, x, y)
 
     this.clearHighlights()
     this.actionMode = null
@@ -501,6 +560,16 @@ export class BattleScene extends Phaser.Scene {
         this.time.delayedCall(500, () => explosion.destroy())
       }
 
+      if (targetEnemy.shadow) {
+        this.tweens.add({
+          targets: targetEnemy.shadow,
+          alpha: 0,
+          scaleX: 1.6,
+          scaleY: 1.6,
+          duration: 500,
+          onComplete: () => targetEnemy.shadow?.destroy(),
+        })
+      }
       this.tweens.add({
         targets: targetEnemy.sprite,
         alpha: 0,
@@ -551,6 +620,16 @@ export class BattleScene extends Phaser.Scene {
     if (targetEnemy.hp <= 0) {
       targetEnemy.alive = false
       targetEnemy.hpBar?.destroy()
+      if (targetEnemy.shadow) {
+        this.tweens.add({
+          targets: targetEnemy.shadow,
+          alpha: 0,
+          scaleX: 1.6,
+          scaleY: 1.6,
+          duration: 500,
+          onComplete: () => targetEnemy.shadow?.destroy(),
+        })
+      }
       this.tweens.add({
         targets: targetEnemy.sprite,
         alpha: 0,
@@ -588,6 +667,44 @@ export class BattleScene extends Phaser.Scene {
   private clearHighlights() {
     this.highlightedTiles.forEach((h) => (h as Phaser.GameObjects.GameObject).destroy())
     this.highlightedTiles = []
+  }
+
+  /** Emit a trail of fading teal foam dots between two pixel coords. */
+  private spawnFoamWake(fromX: number, fromY: number, toX: number, toY: number) {
+    const steps = 8
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1)
+      const px = fromX + (toX - fromX) * t + (Math.random() - 0.5) * 6
+      const py = fromY + (toY - fromY) * t + (Math.random() - 0.5) * 6
+      const dot = this.add.circle(px, py, 3 + Math.random() * 2, 0x52e0c4, 0.7)
+      dot.setDepth(4)
+      this.tweens.add({
+        targets: dot,
+        alpha: 0,
+        scale: 2.2,
+        duration: 700 + i * 60,
+        ease: 'Cubic.out',
+        onComplete: () => dot.destroy(),
+      })
+    }
+  }
+
+  /** Slow-drifting radial highlight that fakes sun reflection on water. */
+  private spawnParallaxShine() {
+    const shine = this.add.graphics()
+    shine.fillStyle(0x52e0c4, 0.05)
+    shine.fillCircle(0, 0, 220)
+    shine.setBlendMode(Phaser.BlendModes.ADD)
+    shine.setDepth(1)
+    shine.setPosition(-200, CANVAS_HEIGHT / 2)
+    this.tweens.add({
+      targets: shine,
+      x: CANVAS_WIDTH + 200,
+      duration: 14000,
+      ease: 'Sine.inOut',
+      yoyo: true,
+      repeat: -1,
+    })
   }
 
   /** Draw a filled hex polygon outline at the given offset coords. */
@@ -669,6 +786,8 @@ export class BattleScene extends Phaser.Scene {
           const best = candidates[0]
           // only move if this actually gets us closer to the player
           if (hexDistance(best, target) < hexDistance(here, target)) {
+            const fromX = (enemy.sprite as any).x as number
+            const fromY = (enemy.sprite as any).y as number
             enemy.col = best.col
             enemy.row = best.row
             const { x, y } = offsetToPixel(best.col, best.row)
@@ -680,6 +799,16 @@ export class BattleScene extends Phaser.Scene {
               duration: 300,
               ease: 'Power2',
             })
+            if (enemy.shadow) {
+              this.tweens.add({
+                targets: enemy.shadow,
+                x: x + 3,
+                y: y + 6,
+                duration: 300,
+                ease: 'Power2',
+              })
+            }
+            this.spawnFoamWake(fromX, fromY, x, y)
 
             if (enemy.hpBar) {
               this.drawEnemyHpBar(enemy.hpBar, x, y - HEX_SIZE + 4, enemy.hp, enemy.maxHp)
