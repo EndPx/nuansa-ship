@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BattleLog } from '@/components/BattleLog'
 import { DamageFloater } from '@/components/DamageFloater'
+import { useBattle } from '@/hooks/useBattle'
 import {
   Panel,
   StatBar,
@@ -33,7 +34,37 @@ export default function BattlePage() {
   const [turn, setTurn] = useState<'player' | 'enemy'>('player')
   const [hp, setHp] = useState({ current: 500, max: 500 })
   const [actionMode, setActionMode] = useState<ActionMode>(null)
+  const [chainReady, setChainReady] = useState(false)
+  const [bootStatus, setBootStatus] = useState<string | null>('◇ Deploying fleet on-chain...')
   const canvasFrameRef = useRef<HTMLDivElement>(null)
+  const { startBattle } = useBattle()
+
+  // Kick off the on-chain battle the moment /battle mounts so subsequent
+  // move/attack/skill broadcasts don't abort with E_BATTLE_NOT_ACTIVE (0x6).
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        await startBattle(1)
+        if (cancelled) return
+        setChainReady(true)
+        setBootStatus('✓ Battle live — you may engage.')
+        setTimeout(() => !cancelled && setBootStatus(null), 3000)
+      } catch (e: any) {
+        if (cancelled) return
+        // Start might fail if a battle is already active for this player —
+        // treat that as "ready to play" rather than a hard block.
+        setChainReady(true)
+        setBootStatus(
+          `◈ Chain battle already in progress — resuming. (${String(e?.message ?? e).slice(0, 60)})`,
+        )
+        setTimeout(() => !cancelled && setBootStatus(null), 4500)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [startBattle])
 
   // ── Wire Phaser → React events ────────────────────────────
   useEffect(() => {
@@ -96,6 +127,22 @@ export default function BattlePage() {
           />
         </div>
       </div>
+
+      {/* Boot/chain status banner */}
+      {bootStatus && (
+        <div
+          className="relative z-10 mb-3 px-4 py-2 font-hud text-xs tracking-[0.25em] text-center border transition-colors"
+          style={{
+            color: chainReady ? 'var(--teal-glow)' : 'var(--gold)',
+            borderColor: chainReady ? 'var(--teal-glow)' : 'var(--gold)',
+            background: chainReady
+              ? 'rgba(82,224,196,0.06)'
+              : 'rgba(244,162,97,0.06)',
+          }}
+        >
+          {bootStatus}
+        </div>
+      )}
 
       {/* Top command bar */}
       <header
@@ -184,7 +231,7 @@ export default function BattlePage() {
             <TacticalButton
               rail
               variant="teal"
-              disabled={turn !== 'player'}
+              disabled={turn !== 'player' || !chainReady}
               onClick={() => setAction('move')}
               className={actionMode === 'move' ? 'ring-1 ring-[color:var(--teal-glow)]' : ''}
             >
@@ -193,7 +240,7 @@ export default function BattlePage() {
             <TacticalButton
               rail
               variant="blood"
-              disabled={turn !== 'player'}
+              disabled={turn !== 'player' || !chainReady}
               onClick={() => setAction('attack')}
               className={actionMode === 'attack' ? 'ring-1 ring-[color:var(--blood)]' : ''}
             >
@@ -202,7 +249,7 @@ export default function BattlePage() {
             <TacticalButton
               rail
               variant="gold"
-              disabled={turn !== 'player'}
+              disabled={turn !== 'player' || !chainReady}
               onClick={() => setAction('skill')}
               className={actionMode === 'skill' ? 'ring-1 ring-[color:var(--gold)]' : ''}
             >
@@ -211,7 +258,7 @@ export default function BattlePage() {
             <TacticalButton
               rail
               variant="teal"
-              disabled={turn !== 'player'}
+              disabled={turn !== 'player' || !chainReady}
               onClick={endTurn}
             >
               ⏭ END TURN
