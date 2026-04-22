@@ -66,8 +66,15 @@ export function MintScreen() {
       window.location.href = '/port'
     } catch (e: any) {
       console.error('Mint failed:', e)
-      const msg = e?.message ?? e?.toString() ?? 'Commission failed'
-      setError(String(msg).slice(0, 220))
+      const msg = String(e?.message ?? e?.toString() ?? 'Commission failed')
+      // Code 0x1 = E_ALREADY_MINTED. The wallet already has a PlayerProfile
+      // on-chain — just route them to port rather than surfacing the error.
+      if (/code 0x1 /i.test(msg) || /E_ALREADY_MINTED/i.test(msg)) {
+        setStatus('◈ Already commissioned — weighing anchor for Port…')
+        setTimeout(() => (window.location.href = '/port'), 500)
+        return
+      }
+      setError(msg.slice(0, 220))
       setMinting(false)
       setStatus(null)
     }
