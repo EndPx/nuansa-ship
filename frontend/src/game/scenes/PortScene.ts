@@ -100,11 +100,37 @@ export class PortScene extends Phaser.Scene {
       }
     }
 
-    // Optional harbor tile overlay
+    // Compose a tile grid from the harbor-tiles spritesheet (4x4, 32px
+    // source frames, drawn at 64x64 here). Skip the bottom dock band so
+    // the wooden plank overlay below stays readable.
     if (this.textures.exists('harbor-tiles')) {
-      const harborTile = this.add.image(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 'harbor-tiles')
-      harborTile.setAlpha(0.12)
-      harborTile.setDisplaySize(CANVAS_WIDTH - 48, CANVAS_HEIGHT - 160)
+      const tileSize = 64
+      const rows = Math.floor((CANVAS_HEIGHT - 100) / tileSize)
+      const cols = Math.ceil(CANVAS_WIDTH / tileSize)
+      let seed = 0xc0ffee
+      const rand = () => {
+        seed = (seed + 0x9e3779b9) >>> 0
+        let t = seed
+        t = Math.imul(t ^ (t >>> 15), t | 1)
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+      }
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const roll = rand()
+          let frame: number
+          if (roll < 0.75) {
+            frame = [0, 3, 12, 15][Math.floor(rand() * 4)]
+          } else if (roll < 0.93) {
+            frame = [1, 2, 4, 7, 8, 11, 13, 14][Math.floor(rand() * 8)]
+          } else {
+            frame = [5, 6, 9, 10][Math.floor(rand() * 4)]
+          }
+          const t = this.add.image(c * tileSize + tileSize / 2, r * tileSize + tileSize / 2, 'harbor-tiles', frame)
+          t.setDisplaySize(tileSize, tileSize)
+          t.setAlpha(0.7)
+        }
+      }
     }
   }
 

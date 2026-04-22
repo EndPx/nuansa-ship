@@ -41,9 +41,16 @@ export class PreloadScene extends Phaser.Scene {
       percentText.destroy()
     })
 
-    // Tilesets
-    this.load.image('ocean-tiles', '/assets/tilesets/ocean.png')
-    this.load.image('harbor-tiles', '/assets/tilesets/harbor.png')
+    // Tilesets are 128x128 atlases with 4x4 = 16 frames of 32x32 each.
+    // Load as spritesheets so scenes can place individual tile frames.
+    this.load.spritesheet('ocean-tiles', '/assets/tilesets/ocean.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    })
+    this.load.spritesheet('harbor-tiles', '/assets/tilesets/harbor.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    })
 
     // Ships (atlas: spritesheet + JSON)
     this.load.atlas('ship-player', '/assets/ships/ship_player.png', '/assets/ships/ship_player.json')

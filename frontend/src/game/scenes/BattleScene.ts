@@ -23,6 +23,18 @@ interface EnemyUnit {
 
 type ActionMode = 'move' | 'attack' | 'skill' | null
 
+/** Mulberry32 — cheap deterministic PRNG for procedural tile choice. */
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0
+    let t = s
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 export class BattleScene extends Phaser.Scene {
   private gridOverlay!: Phaser.GameObjects.Graphics
   private playerSprite!: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
@@ -131,11 +143,42 @@ export class BattleScene extends Phaser.Scene {
     redGlow.fillStyle(0xe63946, 0.06)
     redGlow.fillCircle(TILE_SIZE * 8.5, CANVAS_HEIGHT / 2, 140)
 
-    // Ocean tile overlay if available
+    // Compose a proper tilemap from the ocean-tiles spritesheet.
+    // Atlas is 4x4 = 16 frames, 32x32 each. Map tiles are 64x64, so we
+    // scale each placed tile 2x. Deterministic seed keeps the layout
+    // stable across re-renders of the same battle.
     if (this.textures.exists('ocean-tiles')) {
-      const oceanTile = this.add.image(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 'ocean-tiles')
-      oceanTile.setAlpha(0.15)
-      oceanTile.setDisplaySize(CANVAS_WIDTH, CANVAS_HEIGHT)
+      const rand = seededRandom(0xbea7ed + this.wave)
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          // Pick a frame: heavily weight the 4 corner "open water" tiles
+          // (indices 0, 3, 12, 15 in a 4x4 Wang set) and sprinkle a few
+          // feature tiles (reef, foam, shallow) for texture.
+          const roll = rand()
+          let frame: number
+          if (roll < 0.72) {
+            // base open water — rotate through corners for subtle variety
+            const corners = [0, 3, 12, 15]
+            frame = corners[Math.floor(rand() * corners.length)]
+          } else if (roll < 0.92) {
+            // edge/transition frames
+            const edges = [1, 2, 4, 7, 8, 11, 13, 14]
+            frame = edges[Math.floor(rand() * edges.length)]
+          } else {
+            // rare "inner" feature tiles
+            const features = [5, 6, 9, 10]
+            frame = features[Math.floor(rand() * features.length)]
+          }
+          const tile = this.add.image(
+            col * TILE_SIZE + TILE_SIZE / 2,
+            row * TILE_SIZE + TILE_SIZE / 2,
+            'ocean-tiles',
+            frame,
+          )
+          tile.setDisplaySize(TILE_SIZE, TILE_SIZE)
+          tile.setAlpha(0.85)
+        }
+      }
     }
 
     // Animated water shimmer lines
