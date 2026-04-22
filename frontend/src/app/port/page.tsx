@@ -95,14 +95,14 @@ export default function PortPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_300px] gap-5">
         {/* ───── Left: Fleet dossier ───── */}
         <aside className="space-y-4 fade-up">
-          <Panel title="◉ FLEET DOSSIER">
+          <Panel iconSrc="/assets/ui/icon_anchor.png" title="FLEET DOSSIER">
             <DossierRow label="CAPTAIN" value={captainName} accent="gold" />
             <StatBar label="LEADERSHIP" current={fleet.captain?.leadership ?? 50} max={100} />
             <StatBar label="TACTICS" current={fleet.captain?.tactics ?? 50} max={100} />
             <StatBar label="XP / LVL" current={`${fleet.captain?.xp ?? 0} / LV ${fleet.captain?.level ?? 1}`} />
           </Panel>
 
-          <Panel title="⛵ FLAGSHIP">
+          <Panel iconSrc="/assets/ui/icon_navigator.png" title="FLAGSHIP">
             <DossierRow label="CLASS" value={shipClassName} accent="teal" />
             <StatBar label="HULL" current={fleet.ship?.hull ?? 500} max={fleet.ship?.maxHull ?? 500} variant="blood" />
             <StatBar label="WEAPON" current={fleet.ship?.weaponDamage ?? 60} max={200} />
@@ -110,7 +110,7 @@ export default function PortPage() {
             <StatBar label="ARMOR" current={fleet.ship?.armor ?? 5} max={100} />
           </Panel>
 
-          <Panel title="👥 CREW ROSTER">
+          <Panel iconSrc="/assets/ui/icon_gunner.png" title="CREW ROSTER">
             <div className="space-y-2">
               {(fleet.crew.length > 0
                 ? fleet.crew
@@ -140,7 +140,7 @@ export default function PortPage() {
 
         {/* ───── Right: Resources + buildings ───── */}
         <aside className="space-y-4 fade-up delay-2">
-          <Panel title="📜 INVENTORY">
+          <Panel iconSrc="/assets/ui/icon_chest.png" title="INVENTORY">
             <Resource icon="▬" label="Iron Planks" amount={port.inventory?.items?.find(i => i.itemType === 0)?.amount ?? 4} />
             <Resource icon="◆" label="Steel Parts" amount={port.inventory?.items?.find(i => i.itemType === 1)?.amount ?? 2} />
             <Resource icon="●" label="Provisions" amount={port.inventory?.items?.find(i => i.itemType === 2)?.amount ?? 6} />
@@ -148,7 +148,7 @@ export default function PortPage() {
             <Resource icon="▲" label="Timber" amount={port.inventory?.items?.find(i => i.itemType === 4)?.amount ?? 3} />
           </Panel>
 
-          <Panel title="🏛 FACILITIES">
+          <Panel iconSrc="/assets/ui/icon_tower.png" title="FACILITIES">
             <BuildingRow name="Shipyard" level={port.port?.shipyardLevel ?? 0} />
             <BuildingRow name="Armory" level={port.port?.armoryLevel ?? 0} />
             <BuildingRow name="Barracks" level={port.port?.barracksLevel ?? 0} />

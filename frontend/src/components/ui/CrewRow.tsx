@@ -6,7 +6,11 @@ interface CrewRowProps {
 }
 
 const ROLES = ['Gunner', 'Navigator', 'Engineer']
-const ICONS = ['💥', '🧭', '🔧']
+const ICON_SRCS = [
+  '/assets/ui/icon_gunner.png',
+  '/assets/ui/icon_navigator.png',
+  '/assets/ui/icon_engineer.png',
+]
 const STATUS_COLORS = ['#52E0C4', '#F4A261', '#E63946']
 const STATUS_TEXT = ['READY', 'INJURED', 'KO']
 
@@ -23,7 +27,14 @@ export function CrewRow({ role, hp, status, compact = false }: CrewRowProps) {
     return (
       <div className="flex items-center justify-between font-mono text-sm py-1 border-b border-[color:var(--teal-dim)]/20 last:border-0">
         <div className="flex items-center gap-2">
-          <span className="text-xl">{ICONS[safeRole]}</span>
+          <img
+            src={ICON_SRCS[safeRole]}
+            alt=""
+            width={22}
+            height={22}
+            className="pixelated"
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+          />
           <span className="text-[color:var(--parchment)]">{ROLES[safeRole]}</span>
         </div>
         <span
@@ -38,7 +49,14 @@ export function CrewRow({ role, hp, status, compact = false }: CrewRowProps) {
 
   return (
     <div className="flex items-center gap-3 border-b border-[color:var(--teal-dim)]/20 pb-2 last:border-b-0 last:pb-0">
-      <div className="text-2xl">{ICONS[safeRole]}</div>
+      <img
+        src={ICON_SRCS[safeRole]}
+        alt=""
+        width={28}
+        height={28}
+        className="pixelated"
+        style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+      />
       <div className="flex-1">
         <div className="font-display text-sm text-[color:var(--parchment)]">
           {ROLES[safeRole]}

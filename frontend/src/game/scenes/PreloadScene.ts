@@ -66,6 +66,15 @@ export class PreloadScene extends Phaser.Scene {
     // Dock plank texture for the port scene
     this.load.image('dock-plank', '/assets/ui/dock_plank.png')
 
+    // True top-down ship sprites (map_objects, not character atlases).
+    // Loaded with separate keys so the old character-based atlases can
+    // stay as fallback if these fail.
+    this.load.image('ship-player-top', '/assets/ships/ship_player_top.png')
+    this.load.image('ship-enemy-top', '/assets/ships/ship_enemy_top.png')
+    this.load.image('ship-boss-top', '/assets/ships/ship_boss_top.png')
+    // Combat effect — cannon muzzle flash
+    this.load.image('muzzle-flash', '/assets/ui/muzzle_flash.png')
+
     // Buildings
     this.load.image('building-shipyard', '/assets/buildings/shipyard.png')
     this.load.image('building-armory', '/assets/buildings/armory.png')

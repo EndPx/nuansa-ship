@@ -22,7 +22,7 @@ import {
 } from '@/game/hex'
 
 interface EnemyUnit {
-  sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
+  sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
   shadow?: Phaser.GameObjects.Ellipse
   col: number
   row: number
@@ -59,7 +59,7 @@ function seededRandom(seed: number): () => number {
 
 export class BattleScene extends Phaser.Scene {
   private gridOverlay!: Phaser.GameObjects.Graphics
-  private playerSprite!: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
+  private playerSprite!: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
   private playerShadow!: Phaser.GameObjects.Ellipse
   private playerIdleTween?: Phaser.Tweens.Tween
   private playerCol: number = PLAYER_SPAWN.col
@@ -336,7 +336,10 @@ export class BattleScene extends Phaser.Scene {
     this.playerShadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, 0.45)
     this.playerShadow.setDepth(3)
 
-    if (this.textures.exists('ship-player')) {
+    if (this.textures.exists('ship-player-top')) {
+      this.playerSprite = this.add.image(x, y, 'ship-player-top')
+      this.playerSprite.setDisplaySize(sz, sz)
+    } else if (this.textures.exists('ship-player')) {
       const frames = this.textures.get('ship-player').getFrameNames()
       const frameKey = frames.length > 0 ? frames[0] : undefined
       this.playerSprite = this.add.sprite(x, y, 'ship-player', frameKey)
@@ -352,6 +355,16 @@ export class BattleScene extends Phaser.Scene {
       targets: this.playerSprite,
       y: y - 2,
       duration: 1400,
+      ease: 'Sine.inOut',
+      yoyo: true,
+      repeat: -1,
+    })
+    // Subtle rotational sway with the water — ±2° on a different period
+    ;(this.playerSprite as any).rotation = 0
+    this.tweens.add({
+      targets: this.playerSprite,
+      rotation: (2 * Math.PI) / 180, // +2 degrees
+      duration: 2100,
       ease: 'Sine.inOut',
       yoyo: true,
       repeat: -1,
@@ -389,13 +402,17 @@ export class BattleScene extends Phaser.Scene {
       const shadow = this.add.ellipse(x + 3, y + 6, sz * 0.85, sz * 0.35, 0x000000, isBoss ? 0.55 : 0.45)
       shadow.setDepth(3)
 
-      let sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Rectangle
-      const textureKey = isBoss ? 'ship-boss' : 'ship-enemy'
+      let sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle
+      const topKey = isBoss ? 'ship-boss-top' : 'ship-enemy-top'
+      const atlasKey = isBoss ? 'ship-boss' : 'ship-enemy'
 
-      if (this.textures.exists(textureKey)) {
-        const frames = this.textures.get(textureKey).getFrameNames()
+      if (this.textures.exists(topKey)) {
+        sprite = this.add.image(x, y, topKey)
+        sprite.setDisplaySize(sz, sz)
+      } else if (this.textures.exists(atlasKey)) {
+        const frames = this.textures.get(atlasKey).getFrameNames()
         const frameKey = frames.length > 0 ? frames[0] : undefined
-        sprite = this.add.sprite(x, y, textureKey, frameKey)
+        sprite = this.add.sprite(x, y, atlasKey, frameKey)
         sprite.setDisplaySize(sz, sz)
       } else {
         sprite = this.add.rectangle(x, y, sz, sz, isBoss ? 0x8b0000 : 0xcc3333)
@@ -408,6 +425,16 @@ export class BattleScene extends Phaser.Scene {
         targets: sprite,
         y: y - (isBoss ? 3 : 2),
         duration: 1600 + spawn.col * 120,
+        ease: 'Sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      })
+      // Enemy rotates the opposite way so the battlefield feels alive
+      ;(sprite as any).rotation = Math.PI // enemy ships face down
+      this.tweens.add({
+        targets: sprite,
+        rotation: Math.PI - (2 * Math.PI) / 180,
+        duration: 2300 + spawn.row * 140,
         ease: 'Sine.inOut',
         yoyo: true,
         repeat: -1,
@@ -529,6 +556,14 @@ export class BattleScene extends Phaser.Scene {
     const dist = hexDistance({ col, row }, { col: this.playerCol, row: this.playerRow })
     if (dist > this.attackRange) return
 
+    // Combat FX — muzzle flash at midpoint toward the target + recoil
+    const playerPos = offsetToPixel(this.playerCol, this.playerRow)
+    const targetPos = offsetToPixel(col, row)
+    const midX = playerPos.x + (targetPos.x - playerPos.x) * 0.35
+    const midY = playerPos.y + (targetPos.y - playerPos.y) * 0.35
+    this.spawnMuzzleFlash(midX, midY)
+    this.recoil(this.playerSprite, playerPos.x, playerPos.y, targetPos.x, targetPos.y)
+
     // Deal damage
     const damage = 60 // base weapon damage
     targetEnemy.hp = Math.max(0, targetEnemy.hp - damage)
@@ -599,6 +634,22 @@ export class BattleScene extends Phaser.Scene {
     const dist = hexDistance({ col, row }, { col: this.playerCol, row: this.playerRow })
     if (dist > this.attackRange) return
 
+    // Combat FX — bigger muzzle flash for skills + recoil, plus a second
+    // flash closer to the target for "BROADSIDE" feel
+    const playerPos = offsetToPixel(this.playerCol, this.playerRow)
+    const targetPos = offsetToPixel(col, row)
+    this.spawnMuzzleFlash(
+      playerPos.x + (targetPos.x - playerPos.x) * 0.3,
+      playerPos.y + (targetPos.y - playerPos.y) * 0.3,
+    )
+    this.time.delayedCall(80, () => {
+      this.spawnMuzzleFlash(
+        playerPos.x + (targetPos.x - playerPos.x) * 0.6,
+        playerPos.y + (targetPos.y - playerPos.y) * 0.6,
+      )
+    })
+    this.recoil(this.playerSprite, playerPos.x, playerPos.y, targetPos.x, targetPos.y)
+
     const damage = 90 // skill damage (higher than normal)
     targetEnemy.hp = Math.max(0, targetEnemy.hp - damage)
 
@@ -667,6 +718,61 @@ export class BattleScene extends Phaser.Scene {
   private clearHighlights() {
     this.highlightedTiles.forEach((h) => (h as Phaser.GameObjects.GameObject).destroy())
     this.highlightedTiles = []
+  }
+
+  /** Spawn a brief muzzle flash at (x, y) with quick scale + fade. */
+  private spawnMuzzleFlash(x: number, y: number) {
+    if (!this.textures.exists('muzzle-flash')) {
+      // Fallback: bright yellow circle
+      const g = this.add.circle(x, y, 14, 0xffdd66, 0.95)
+      g.setDepth(6)
+      this.tweens.add({
+        targets: g,
+        scale: 2.4,
+        alpha: 0,
+        duration: 220,
+        onComplete: () => g.destroy(),
+      })
+      return
+    }
+    const flash = this.add.image(x, y, 'muzzle-flash')
+    flash.setDisplaySize(HEX_SIZE * 1.2, HEX_SIZE * 1.2)
+    flash.setDepth(6)
+    flash.setBlendMode(Phaser.BlendModes.ADD)
+    flash.setAlpha(1)
+    flash.setScale((flash.scaleX || 1) * 0.6)
+    this.tweens.add({
+      targets: flash,
+      scaleX: (flash.scaleX || 1) * 1.8,
+      scaleY: (flash.scaleY || 1) * 1.8,
+      alpha: 0,
+      duration: 260,
+      onComplete: () => flash.destroy(),
+    })
+  }
+
+  /** Brief shove of the attacker away from the target (recoil). */
+  private recoil(
+    sprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle,
+    fromX: number,
+    fromY: number,
+    towardX: number,
+    towardY: number,
+  ) {
+    const dx = fromX - towardX
+    const dy = fromY - towardY
+    const len = Math.hypot(dx, dy) || 1
+    const recoilPx = 6
+    const rx = (dx / len) * recoilPx
+    const ry = (dy / len) * recoilPx
+    this.tweens.add({
+      targets: sprite,
+      x: fromX + rx,
+      y: fromY + ry,
+      duration: 90,
+      ease: 'Quad.out',
+      yoyo: true,
+    })
   }
 
   /** Emit a trail of fading teal foam dots between two pixel coords. */
@@ -746,6 +852,18 @@ export class BattleScene extends Phaser.Scene {
       const enemyDamage = this.wave <= 3 ? 40 : this.wave <= 6 ? 70 : 150
 
       if (dist <= enemyRange) {
+        // Enemy combat FX — flash + recoil the enemy that's firing +
+        // shake and flash the player
+        const enemyPos = offsetToPixel(enemy.col, enemy.row)
+        const playerPos = offsetToPixel(this.playerCol, this.playerRow)
+        this.spawnMuzzleFlash(
+          enemyPos.x + (playerPos.x - enemyPos.x) * 0.3,
+          enemyPos.y + (playerPos.y - enemyPos.y) * 0.3,
+        )
+        this.recoil(enemy.sprite, enemyPos.x, enemyPos.y, playerPos.x, playerPos.y)
+        // dispatch screen shake to the React battle page
+        window.dispatchEvent(new CustomEvent('battle:shake', { detail: { intensity: 2 } }))
+
         // Attack player
         this.playerHp = Math.max(0, this.playerHp - enemyDamage)
 

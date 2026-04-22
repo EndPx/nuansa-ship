@@ -175,7 +175,7 @@ export default function BattlePage() {
       <div className="relative grid grid-cols-1 lg:grid-cols-[260px_1fr_300px] gap-5">
         {/* Left: Player status */}
         <aside className="space-y-4 fade-up">
-          <Panel title="⚓ YOUR FLEET">
+          <Panel iconSrc="/assets/ui/icon_anchor.png" title="YOUR FLEET">
             <StatBar
               label="HULL INTEGRITY"
               current={hp.current}
@@ -188,13 +188,13 @@ export default function BattlePage() {
             </div>
           </Panel>
 
-          <Panel title="👥 CREW">
+          <Panel iconSrc="/assets/ui/icon_gunner.png" title="CREW">
             <CrewRow role={0} hp={100} status={0} compact />
             <CrewRow role={1} hp={100} status={0} compact />
             <CrewRow role={2} hp={100} status={0} compact />
           </Panel>
 
-          <Panel title="⚡ SPECIAL">
+          <Panel iconSrc="/assets/ui/icon_lightning.png" title="SPECIAL">
             <SkillSlot name="Broadside" cd="READY" />
             <SkillSlot name="Evasive Drift" cd="CD 2" />
             <SkillSlot name="Emergency Repair" cd="READY" />
