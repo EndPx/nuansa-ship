@@ -100,37 +100,65 @@ export class PortScene extends Phaser.Scene {
       }
     }
 
-    // Compose a tile grid from the harbor-tiles spritesheet (4x4, 32px
-    // source frames, drawn at 64x64 here). Skip the bottom dock band so
-    // the wooden plank overlay below stays readable.
-    if (this.textures.exists('harbor-tiles')) {
-      const tileSize = 64
-      const rows = Math.floor((CANVAS_HEIGHT - 100) / tileSize)
-      const cols = Math.ceil(CANVAS_WIDTH / tileSize)
-      let seed = 0xc0ffee
-      const rand = () => {
-        seed = (seed + 0x9e3779b9) >>> 0
-        let t = seed
-        t = Math.imul(t ^ (t >>> 15), t | 1)
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    // Deliberately NOT tiling harbor-tiles anymore — that atlas has
+    // water-to-wood transition frames that scatter into a mess when
+    // placed randomly. Clean graphics-only dock above reads much better.
+
+    // Scatter a few small dock details on the wooden platform so it's
+    // not flat. Rope coils, barrel dots, and rivet clusters.
+    let seed = 0xc0ffee
+    const rand = () => {
+      seed = (seed + 0x9e3779b9) >>> 0
+      let t = seed
+      t = Math.imul(t ^ (t >>> 15), t | 1)
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+
+    // Rivet/nail dots along plank joints
+    const rivets = this.add.graphics()
+    rivets.fillStyle(0x3a2a10, 0.65)
+    for (let y = 88; y < CANVAS_HEIGHT - 80; y += 20) {
+      for (let x = 60; x < CANVAS_WIDTH - 40; x += 120) {
+        rivets.fillCircle(x, y, 1.5)
       }
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const roll = rand()
-          let frame: number
-          if (roll < 0.75) {
-            frame = [0, 3, 12, 15][Math.floor(rand() * 4)]
-          } else if (roll < 0.93) {
-            frame = [1, 2, 4, 7, 8, 11, 13, 14][Math.floor(rand() * 8)]
-          } else {
-            frame = [5, 6, 9, 10][Math.floor(rand() * 4)]
-          }
-          const t = this.add.image(c * tileSize + tileSize / 2, r * tileSize + tileSize / 2, 'harbor-tiles', frame)
-          t.setDisplaySize(tileSize, tileSize)
-          t.setAlpha(0.7)
-        }
-      }
+    }
+
+    // Small lantern glows along the edges
+    const lanternY = CANVAS_HEIGHT - 100
+    ;[80, CANVAS_WIDTH / 2, CANVAS_WIDTH - 80].forEach((lx, i) => {
+      const glow = this.add.graphics()
+      glow.fillStyle(0xf4a261, 0.15)
+      glow.fillCircle(lx, lanternY, 26)
+      const core = this.add.graphics()
+      core.fillStyle(0xffd59a, 0.85)
+      core.fillCircle(lx, lanternY, 3)
+      this.tweens.add({
+        targets: glow,
+        alpha: 0.05,
+        duration: 1600 + i * 300,
+        ease: 'Sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      })
+    })
+
+    // Faint foam ripple streaks in the bottom water band
+    for (let i = 0; i < 5; i++) {
+      const streak = this.add.graphics()
+      const y = CANVAS_HEIGHT - 60 + rand() * 40
+      const x = rand() * CANVAS_WIDTH
+      const w = 40 + rand() * 80
+      streak.fillStyle(0x52e0c4, 0.18)
+      streak.fillRect(x, y, w, 1)
+      this.tweens.add({
+        targets: streak,
+        x: `+=${CANVAS_WIDTH / 3}`,
+        duration: 6000 + rand() * 4000,
+        repeat: -1,
+        yoyo: true,
+        ease: 'Sine.inOut',
+      })
     }
   }
 
