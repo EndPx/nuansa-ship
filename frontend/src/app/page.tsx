@@ -171,25 +171,33 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
 
       {/* Main hero */}
       <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-32">
-        {/* Compass + radar */}
-        <div className="relative mb-10 fade-up">
-          <div className="relative w-[260px] h-[260px] flex items-center justify-center">
+        {/* Emblem + radar pulse rings */}
+        <div className="relative mb-8 fade-up">
+          <div className="relative w-[320px] h-[320px] md:w-[380px] md:h-[380px] flex items-center justify-center">
             <div className="absolute inset-0 radar-pulse rounded-full opacity-70" />
             <div className="absolute inset-4 border border-[color:var(--teal-dim)]/40 rounded-full" />
             <div className="absolute inset-10 border border-[color:var(--teal-dim)]/30 rounded-full" />
-            <div className="compass-spin relative">
-              <CompassRose size={180} />
-            </div>
+            <img
+              src="/assets/ui/nuansa_logo_emblem.png"
+              alt="Nuansa Ship Admiralty Emblem"
+              width={380}
+              height={380}
+              className="relative drop-shadow-[0_0_24px_rgba(82,224,196,0.35)]"
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
           </div>
         </div>
 
-        {/* Title */}
-        <h1 className="font-display text-6xl md:text-8xl text-[color:var(--ivory)] fade-up delay-1 tracking-widest text-center">
-          NUANSA
-          <span className="block text-[color:var(--teal-glow)] text-glow -mt-3 md:-mt-6">
-            SHIP
-          </span>
-        </h1>
+        {/* Wordmark */}
+        <div className="fade-up delay-1 w-full max-w-xl">
+          <img
+            src="/assets/ui/nuansa_logo_wordmark.png"
+            alt="NUANSA SHIP"
+            width={580}
+            height={316}
+            className="w-full h-auto drop-shadow-[0_0_12px_rgba(82,224,196,0.2)]"
+          />
+        </div>
 
         {/* Tagline */}
         <div className="mt-8 text-center fade-up delay-2">

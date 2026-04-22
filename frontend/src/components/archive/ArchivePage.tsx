@@ -29,9 +29,17 @@ export function ArchivePage({
         <div className="flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="font-hud text-xs tracking-[0.4em] text-[color:var(--teal-dim)] hover:text-[color:var(--teal-glow)] transition-colors"
+            className="group flex items-center gap-3 font-hud text-xs tracking-[0.4em] text-[color:var(--teal-dim)] hover:text-[color:var(--teal-glow)] transition-colors"
           >
-            ← RETURN TO HELM
+            <img
+              src="/assets/ui/nuansa_logo_app.png"
+              alt="Nuansa Ship"
+              width={28}
+              height={28}
+              className="rounded-md transition-transform group-hover:scale-110"
+              style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))' }}
+            />
+            <span>← RETURN TO HELM</span>
           </Link>
           <div className="text-center">
             <div className="font-hud text-[10px] tracking-[0.5em] text-[color:var(--brass)]">

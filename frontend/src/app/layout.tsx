@@ -13,6 +13,13 @@ export default function RootLayout({
       <head>
         <title>Nuansa Ship — Tactical Naval Command</title>
         <meta name="description" content="Tactical naval RPG on Initia blockchain. Captain. Ship. Crew. Command." />
+        <link rel="icon" type="image/png" href="/assets/ui/nuansa_logo_app.png" />
+        <link rel="apple-touch-icon" href="/assets/ui/nuansa_logo_app.png" />
+        <meta property="og:title" content="Nuansa Ship — Tactical Naval Command" />
+        <meta property="og:description" content="Tactical naval RPG on Initia blockchain. Captain. Ship. Crew. Command." />
+        <meta property="og:image" content="/assets/ui/nuansa_logo_emblem.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="/assets/ui/nuansa_logo_emblem.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
