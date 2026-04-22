@@ -11,6 +11,14 @@ interface UpgradePanelProps {
   onClose: () => void
 }
 
+const BUILDING_ICONS: Record<number, string> = {
+  0: '/assets/ui/icon_shipyard.png',
+  1: '/assets/ui/icon_armory.png',
+  2: '/assets/ui/icon_barracks.png',
+  3: '/assets/ui/icon_admirals_hall.png',
+  4: '/assets/ui/icon_warehouse.png',
+}
+
 const BUILDING_DESCRIPTIONS: Record<number, string[]> = {
   0: [ // Shipyard
     'Unlocks Corvette construction',
@@ -122,13 +130,25 @@ export function UpgradePanel({ buildingType, buildingName, currentLevel, onClose
 
         {/* Header strip */}
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-[color:var(--teal-dim)]/30">
-          <div>
-            <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">
-              ◉ FACILITY UPGRADE
+          <div className="flex items-center gap-3">
+            {BUILDING_ICONS[buildingType] && (
+              <img
+                src={BUILDING_ICONS[buildingType]}
+                alt=""
+                width={48}
+                height={48}
+                className="pixelated"
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.7))' }}
+              />
+            )}
+            <div>
+              <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">
+                ◉ FACILITY UPGRADE
+              </div>
+              <h2 className="font-display text-2xl text-[color:var(--ivory)] tracking-widest text-glow mt-0.5">
+                {buildingName}
+              </h2>
             </div>
-            <h2 className="font-display text-2xl text-[color:var(--ivory)] tracking-widest text-glow mt-0.5">
-              {buildingName}
-            </h2>
           </div>
           <button
             onClick={onClose}

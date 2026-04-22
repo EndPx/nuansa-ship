@@ -149,11 +149,11 @@ export default function PortPage() {
           </Panel>
 
           <Panel iconSrc="/assets/ui/icon_tower.png" title="FACILITIES">
-            <BuildingRow name="Shipyard" level={port.port?.shipyardLevel ?? 0} />
-            <BuildingRow name="Armory" level={port.port?.armoryLevel ?? 0} />
-            <BuildingRow name="Barracks" level={port.port?.barracksLevel ?? 0} />
-            <BuildingRow name="Admiral's Hall" level={port.port?.admiralsHallLevel ?? 0} />
-            <BuildingRow name="Warehouse" level={port.port?.warehouseLevel ?? 0} />
+            <BuildingRow name="Shipyard" iconSrc="/assets/ui/icon_shipyard.png" level={port.port?.shipyardLevel ?? 0} />
+            <BuildingRow name="Armory" iconSrc="/assets/ui/icon_armory.png" level={port.port?.armoryLevel ?? 0} />
+            <BuildingRow name="Barracks" iconSrc="/assets/ui/icon_barracks.png" level={port.port?.barracksLevel ?? 0} />
+            <BuildingRow name="Admiral's Hall" iconSrc="/assets/ui/icon_admirals_hall.png" level={port.port?.admiralsHallLevel ?? 0} />
+            <BuildingRow name="Warehouse" iconSrc="/assets/ui/icon_warehouse.png" level={port.port?.warehouseLevel ?? 0} />
           </Panel>
         </aside>
       </div>
@@ -218,11 +218,23 @@ function Resource({ icon, label, amount }: { icon: string; label: string; amount
   )
 }
 
-function BuildingRow({ name, level }: { name: string; level: number }) {
+function BuildingRow({ name, iconSrc, level }: { name: string; iconSrc?: string; level: number }) {
   const pips = Array.from({ length: 5 }, (_, i) => i < level)
   return (
     <div className="flex items-center justify-between font-mono text-sm">
-      <span className="text-[color:var(--parchment)]">{name}</span>
+      <span className="flex items-center gap-2 text-[color:var(--parchment)]">
+        {iconSrc && (
+          <img
+            src={iconSrc}
+            alt=""
+            width={20}
+            height={20}
+            className="pixelated"
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+          />
+        )}
+        {name}
+      </span>
       <div className="flex gap-0.5">
         {pips.map((on, i) => (
           <span

@@ -15,17 +15,13 @@ export function useAutoSign() {
     if (!isConnected) {
       throw new Error('Wallet not connected')
     }
-    // Always disable first (swallow errors — session may not exist yet),
-    // then re-enable with the explicit permissions list. This guarantees
-    // the session grant covers /initia.move.v1.MsgExecute — a prior
-    // permission-less grant would otherwise keep falling through to the
-    // Confirm-tx modal on every move.
-    try {
-      if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
-        await autoSign.disable(NUANSA_CHAIN_ID)
-      }
-    } catch {
-      // ignore "authorization not found" — the skill doc says so
+    // If a session is already live for this chain, trust it — all our
+    // grants go through this same hook which always passes permissions,
+    // so a pre-existing grant is already permissioned correctly. This
+    // avoids a second Approve modal when /battle mounts right after
+    // the Port "Set Sail" button already provisioned the session.
+    if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
+      return
     }
     await (autoSign.enable as any)(NUANSA_CHAIN_ID, {
       permissions: ['/initia.move.v1.MsgExecute'],

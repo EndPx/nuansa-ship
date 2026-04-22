@@ -182,9 +182,9 @@ export function MintScreen() {
                 ◊ Starter Commission Includes ◊
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <StarterItem icon="⚔" label="Captain NFT" sub="Lv. 1" />
-                <StarterItem icon="⛵" label="Corvette" sub="500 HULL" />
-                <StarterItem icon="💥" label="Gunner" sub="+15% DMG" />
+                <StarterItem iconSrc="/assets/ui/icon_captain_bust.png" label="Captain NFT" sub="Lv. 1" />
+                <StarterItem iconSrc="/assets/ships/ship_player_top.png" label="Corvette" sub="500 HULL" />
+                <StarterItem iconSrc="/assets/ui/icon_gunner.png" label="Gunner" sub="+15% DMG" />
               </div>
             </div>
 
@@ -300,13 +300,22 @@ function CaptainPortrait({ name }: { name: string }) {
 }
 
 
-function StarterItem({ icon, label, sub }: { icon: string; label: string; sub: string }) {
+function StarterItem({ iconSrc, label, sub }: { iconSrc: string; label: string; sub: string }) {
   return (
     <div
       className="relative border border-[#6b4e20]/60 bg-[#dfc699]/60 py-4 text-center"
       style={{ fontFamily: '"IM Fell English", serif' }}
     >
-      <div className="text-4xl mb-1 leading-none">{icon}</div>
+      <div className="flex justify-center mb-2">
+        <img
+          src={iconSrc}
+          alt=""
+          width={44}
+          height={44}
+          className="pixelated"
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+        />
+      </div>
       <div className="font-semibold text-base">{label}</div>
       <div className="text-xs font-mono opacity-70 mt-0.5 tracking-wider">
         {sub}

@@ -36,6 +36,7 @@ export default function BattlePage() {
   const [actionMode, setActionMode] = useState<ActionMode>(null)
   const [chainReady, setChainReady] = useState(false)
   const [bootStatus, setBootStatus] = useState<string | null>('◇ Deploying fleet on-chain...')
+  const [skillCd, setSkillCd] = useState(0)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
 
@@ -86,15 +87,21 @@ export default function BattlePage() {
       el.classList.add('shake-hit')
       setTimeout(() => el.classList.remove('shake-hit'), 450)
     }
+    const onSkillCd = (e: Event) => {
+      const cd = (e as CustomEvent).detail?.cd ?? 0
+      setSkillCd(Math.max(0, cd))
+    }
     window.addEventListener('battle:turn', onTurn)
     window.addEventListener('battle:hp', onHp)
     window.addEventListener('battle:wave', onWave)
     window.addEventListener('battle:shake', onShake)
+    window.addEventListener('battle:skillCd', onSkillCd)
     return () => {
       window.removeEventListener('battle:turn', onTurn)
       window.removeEventListener('battle:hp', onHp)
       window.removeEventListener('battle:wave', onWave)
       window.removeEventListener('battle:shake', onShake)
+      window.removeEventListener('battle:skillCd', onSkillCd)
       document.body.classList.remove('enemy-turn')
     }
   }, [])
@@ -195,9 +202,9 @@ export default function BattlePage() {
           </Panel>
 
           <Panel iconSrc="/assets/ui/icon_lightning.png" title="SPECIAL">
-            <SkillSlot name="Broadside" cd="READY" />
-            <SkillSlot name="Evasive Drift" cd="CD 2" />
-            <SkillSlot name="Emergency Repair" cd="READY" />
+            <SkillSlot name="Broadside" cd={skillCd > 0 ? `CD ${skillCd}` : 'READY'} />
+            <SkillSlot name="Evasive Drift" cd="—" />
+            <SkillSlot name="Emergency Repair" cd="—" />
           </Panel>
         </aside>
 
@@ -249,11 +256,11 @@ export default function BattlePage() {
             <TacticalButton
               rail
               variant="gold"
-              disabled={turn !== 'player' || !chainReady}
+              disabled={turn !== 'player' || !chainReady || skillCd > 0}
               onClick={() => setAction('skill')}
               className={actionMode === 'skill' ? 'ring-1 ring-[color:var(--gold)]' : ''}
             >
-              ⚡ SKILL
+              ⚡ SKILL{skillCd > 0 ? ` · CD ${skillCd}` : ''}
             </TacticalButton>
             <TacticalButton
               rail

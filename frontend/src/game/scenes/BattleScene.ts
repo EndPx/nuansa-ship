@@ -73,6 +73,10 @@ export class BattleScene extends Phaser.Scene {
   private highlightedTiles: Phaser.GameObjects.GameObject[] = []
   private moveRange: number = 4 // engine stat
   private attackRange: number = 2 // weapon range
+  // Skill cooldowns (in turns). 0 = ready, >0 = unusable this many
+  // player turns. Decremented in endPlayerTurn.
+  private skillCd: number = 0
+  private skillCdBase: number = 2
 
   constructor() {
     super({ key: 'BattleScene' })
@@ -88,6 +92,7 @@ export class BattleScene extends Phaser.Scene {
     this.actionMode = null
     this.enemies = []
     this.highlightedTiles = []
+    this.skillCd = 0
 
     // Draw ocean background
     this.drawOceanBackground()
@@ -612,6 +617,12 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private trySkill(col: number, row: number) {
+    // Cooldown gate — can't fire skill while it's still recharging
+    if (this.skillCd > 0) {
+      this.emitBattleLog('system', `Broadside recharging. Ready in ${this.skillCd} turn(s).`)
+      return
+    }
+
     // Crew skill: Gunner multi-shot targets 2 enemies, but for now just higher damage single target
     const targetEnemy = this.enemies.find(
       (e) => e.alive && e.col === col && e.row === row
@@ -677,6 +688,10 @@ export class BattleScene extends Phaser.Scene {
       this.emitBattleLog('system', 'Enemy ship destroyed!')
       this.checkWaveComplete()
     }
+
+    // Trigger cooldown + broadcast it to React
+    this.skillCd = this.skillCdBase
+    window.dispatchEvent(new CustomEvent('battle:skillCd', { detail: { cd: this.skillCd } }))
 
     this.clearHighlights()
     this.actionMode = null
@@ -821,6 +836,11 @@ export class BattleScene extends Phaser.Scene {
     this.isPlayerTurn = false
     this.actionMode = null
     this.clearHighlights()
+    // Decrement skill cooldown at the end of the player turn
+    if (this.skillCd > 0) {
+      this.skillCd -= 1
+      window.dispatchEvent(new CustomEvent('battle:skillCd', { detail: { cd: this.skillCd } }))
+    }
     this.emitStateUpdate()
     this.emitBattleLog('system', 'Enemy turn...')
 
