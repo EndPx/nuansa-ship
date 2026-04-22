@@ -63,6 +63,8 @@ export class PreloadScene extends Phaser.Scene {
     // Hex tiles (pixellab-generated 96x96 hex shapes for battle grid)
     this.load.image('hex-water', '/assets/ui/hex_water.png')
     this.load.image('hex-reef', '/assets/ui/hex_reef.png')
+    // Dock plank texture for the port scene
+    this.load.image('dock-plank', '/assets/ui/dock_plank.png')
 
     // Buildings
     this.load.image('building-shipyard', '/assets/buildings/shipyard.png')
