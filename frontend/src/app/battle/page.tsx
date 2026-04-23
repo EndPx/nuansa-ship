@@ -39,6 +39,7 @@ export default function BattlePage() {
   const [skillCd, setSkillCd] = useState(0)
   const [turnAnnounce, setTurnAnnounce] = useState<{ key: number; turn: 'player' | 'enemy' } | null>(null)
   const [outcome, setOutcome] = useState<{ status: 'won' | 'lost' | 'wave-cleared'; wave: number } | null>(null)
+  const [showHelp, setShowHelp] = useState(false)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
 
@@ -152,13 +153,20 @@ export default function BattlePage() {
         e.preventDefault()
         endTurn()
       } else if (e.key === 'Escape') {
+        if (showHelp) {
+          setShowHelp(false)
+          return
+        }
         setActionMode(null)
         window.dispatchEvent(new CustomEvent('ui:setAction', { detail: { mode: null } }))
+      } else if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+        e.preventDefault()
+        setShowHelp((v) => !v)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [turn, chainReady, skillCd])
+  }, [turn, chainReady, skillCd, showHelp])
 
   const hpPct = Math.round((hp.current / hp.max) * 100)
   const isEnemy = turn === 'enemy'
@@ -167,6 +175,72 @@ export default function BattlePage() {
     <main className="relative min-h-screen px-4 py-6">
       {/* Global red-alert vignette (toggled by body.enemy-turn) */}
       <div className="red-vignette" aria-hidden />
+
+      {/* Help overlay — ? toggles, Esc dismisses */}
+      {showHelp && (
+        <div
+          className="fixed inset-0 z-[9997] flex items-center justify-center px-4 pointer-events-auto"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(10,22,40,0.92) 0%, rgba(5,12,24,0.98) 70%)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            className="corner-frame box-console p-6 md:p-8 max-w-2xl w-full fade-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="corner tl" />
+            <span className="corner tr" />
+            <span className="corner bl" />
+            <span className="corner br" />
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-[color:var(--teal-dim)]/30">
+              <div>
+                <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">◉ ADMIRAL'S BRIEFING</div>
+                <h2 className="font-display text-2xl tracking-widest text-[color:var(--teal-glow)] text-glow mt-0.5">
+                  COMBAT CONTROLS
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowHelp(false)}
+                className="font-hud text-2xl text-[color:var(--teal-dim)] hover:text-[color:var(--blood)]"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <div className="font-hud text-[10px] tracking-[0.3em] text-[color:var(--brass)] mb-2">
+                  ◈ KEYBOARD
+                </div>
+                <ul className="space-y-1.5 font-mono">
+                  <li><HelpKey k="M" /> <span className="text-[color:var(--parchment)]">Move mode</span></li>
+                  <li><HelpKey k="A" /> <span className="text-[color:var(--parchment)]">Attack mode</span></li>
+                  <li><HelpKey k="S" /> <span className="text-[color:var(--parchment)]">Skill mode</span></li>
+                  <li><HelpKey k="Space" /> <span className="text-[color:var(--parchment)]">End turn</span></li>
+                  <li><HelpKey k="Esc" /> <span className="text-[color:var(--parchment)]">Cancel mode / close help</span></li>
+                  <li><HelpKey k="?" /> <span className="text-[color:var(--parchment)]">Toggle this briefing</span></li>
+                </ul>
+              </div>
+              <div>
+                <div className="font-hud text-[10px] tracking-[0.3em] text-[color:var(--brass)] mb-2">
+                  ◈ MOUSE
+                </div>
+                <ul className="space-y-1.5 font-mono text-[color:var(--parchment)]">
+                  <li>• Click an action button, then click a hex to commit</li>
+                  <li>• Hex outline under cursor shows the target tile</li>
+                  <li>• Teal range = MOVE · red range = ATTACK · gold = SKILL</li>
+                  <li>• Click <span className="text-[color:var(--blood)]">RETREAT</span> to return to port any time</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-5 pt-4 border-t border-[color:var(--teal-dim)]/30 font-im-fell italic text-sm text-[color:var(--parchment)]/80" style={{ fontFamily: '"IM Fell English", serif' }}>
+              « The sea keeps her tributes — fight for every hex, Captain. »
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Outcome overlay — covers the screen on win / loss (not on wave-cleared) */}
       {outcome && outcome.status !== 'wave-cleared' && (
@@ -329,6 +403,14 @@ export default function BattlePage() {
         <div className="flex items-center gap-6">
           <WaveBadge wave={wave} />
           <TurnBadge turn={turn} />
+          <button
+            onClick={() => setShowHelp(true)}
+            className="w-9 h-9 flex items-center justify-center border border-[color:var(--teal-dim)] text-[color:var(--teal-glow)] font-display text-xl hover:border-[color:var(--teal-glow)] hover:shadow-[0_0_12px_rgba(82,224,196,0.4)] transition-all"
+            title="Combat controls (press ?)"
+            aria-label="Show controls"
+          >
+            ?
+          </button>
           <TacticalButton variant="teal" onClick={() => router.push('/port')}>
             ← RETREAT
           </TacticalButton>
@@ -518,6 +600,23 @@ function KeyHint({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+    </span>
+  )
+}
+
+function HelpKey({ k }: { k: string }) {
+  return (
+    <span
+      className="inline-block px-2 py-[1px] font-mono text-[11px] tracking-normal border rounded-sm align-middle mr-2"
+      style={{
+        color: 'var(--teal-glow)',
+        borderColor: 'var(--teal-glow)',
+        background: 'rgba(8,19,32,0.8)',
+        minWidth: '2.2em',
+        textAlign: 'center',
+      }}
+    >
+      {k}
     </span>
   )
 }
