@@ -38,6 +38,7 @@ export default function BattlePage() {
   const [bootStatus, setBootStatus] = useState<string | null>('◇ Deploying fleet on-chain...')
   const [skillCd, setSkillCd] = useState(0)
   const [turnAnnounce, setTurnAnnounce] = useState<{ key: number; turn: 'player' | 'enemy' } | null>(null)
+  const [outcome, setOutcome] = useState<{ status: 'won' | 'lost' | 'wave-cleared'; wave: number } | null>(null)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
 
@@ -93,17 +94,28 @@ export default function BattlePage() {
       const cd = (e as CustomEvent).detail?.cd ?? 0
       setSkillCd(Math.max(0, cd))
     }
+    const onOutcome = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      if (!d) return
+      setOutcome({ status: d.status, wave: d.wave })
+      // Auto-dismiss wave-cleared (battle continues); keep won/lost open
+      if (d.status === 'wave-cleared') {
+        setTimeout(() => setOutcome(null), 1500)
+      }
+    }
     window.addEventListener('battle:turn', onTurn)
     window.addEventListener('battle:hp', onHp)
     window.addEventListener('battle:wave', onWave)
     window.addEventListener('battle:shake', onShake)
     window.addEventListener('battle:skillCd', onSkillCd)
+    window.addEventListener('battle:outcome', onOutcome)
     return () => {
       window.removeEventListener('battle:turn', onTurn)
       window.removeEventListener('battle:hp', onHp)
       window.removeEventListener('battle:wave', onWave)
       window.removeEventListener('battle:shake', onShake)
       window.removeEventListener('battle:skillCd', onSkillCd)
+      window.removeEventListener('battle:outcome', onOutcome)
       document.body.classList.remove('enemy-turn')
     }
   }, [])
@@ -155,6 +167,86 @@ export default function BattlePage() {
     <main className="relative min-h-screen px-4 py-6">
       {/* Global red-alert vignette (toggled by body.enemy-turn) */}
       <div className="red-vignette" aria-hidden />
+
+      {/* Outcome overlay — covers the screen on win / loss (not on wave-cleared) */}
+      {outcome && outcome.status !== 'wave-cleared' && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center pointer-events-auto"
+          style={{
+            background:
+              outcome.status === 'won'
+                ? 'radial-gradient(circle at center, rgba(10,22,40,0.85) 0%, rgba(5,12,24,0.98) 70%)'
+                : 'radial-gradient(circle at center, rgba(40,10,14,0.9) 0%, rgba(20,5,8,0.98) 70%)',
+            backdropFilter: 'blur(6px)',
+          }}
+        >
+          <div className="text-center fade-up">
+            <div
+              className="font-hud text-xs tracking-[0.5em] mb-4"
+              style={{
+                color: outcome.status === 'won' ? 'var(--gold)' : 'var(--blood)',
+              }}
+            >
+              {outcome.status === 'won' ? '✦ ALL WAVES CLEARED ✦' : '⚠ FLEET LOST ⚠'}
+            </div>
+            <h2
+              className="font-display text-6xl md:text-8xl tracking-widest mb-4"
+              style={{
+                color: outcome.status === 'won' ? 'var(--gold)' : 'var(--blood)',
+                textShadow:
+                  outcome.status === 'won'
+                    ? '0 0 32px rgba(244,162,97,0.7)'
+                    : '0 0 32px rgba(230,57,70,0.7)',
+              }}
+            >
+              {outcome.status === 'won' ? 'VICTORY' : 'DEFEAT'}
+            </h2>
+            <p className="font-im-fell text-xl italic text-[color:var(--parchment)] mb-8" style={{ fontFamily: '"IM Fell English", serif' }}>
+              {outcome.status === 'won'
+                ? `You cleared all 7 waves. The Admiralty salutes you.`
+                : `Your ship was sunk on wave ${outcome.wave}. The sea keeps its tribute.`}
+            </p>
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <TacticalButton variant="teal" onClick={() => router.push('/port')}>
+                ← RETURN TO PORT
+              </TacticalButton>
+              <TacticalButton
+                variant="blood"
+                glitch
+                onClick={() => {
+                  setOutcome(null)
+                  window.location.reload()
+                }}
+              >
+                ◢ SAIL AGAIN ◣
+              </TacticalButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wave-cleared interstitial — brief cinematic ribbon */}
+      {outcome && outcome.status === 'wave-cleared' && (
+        <div
+          key={outcome.wave}
+          className="turn-announce fixed top-[40vh] left-0 right-0 z-[9996] pointer-events-none flex justify-center"
+        >
+          <div
+            className="px-16 py-4 font-display tracking-[0.3em] text-4xl md:text-6xl"
+            style={{
+              color: 'var(--gold)',
+              background:
+                'linear-gradient(90deg, transparent 0%, rgba(10,22,40,0.9) 20%, rgba(10,22,40,0.9) 80%, transparent 100%)',
+              borderTop: '1px solid var(--gold)',
+              borderBottom: '1px solid var(--gold)',
+              textShadow: '0 0 14px rgba(244,162,97,0.9)',
+              boxShadow: '0 0 48px rgba(244,162,97,0.4)',
+            }}
+          >
+            ✦ WAVE {outcome.wave} CLEARED ✦
+          </div>
+        </div>
+      )}
 
       {/* Turn announcement banner — slides across on every turn flip */}
       {turnAnnounce && (

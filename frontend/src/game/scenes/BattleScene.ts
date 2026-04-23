@@ -894,6 +894,9 @@ export class BattleScene extends Phaser.Scene {
             isPlayerTurn: false,
             status: 'lost',
           })
+          window.dispatchEvent(
+            new CustomEvent('battle:outcome', { detail: { status: 'lost', wave: this.wave } }),
+          )
           return
         }
       } else {
@@ -962,6 +965,12 @@ export class BattleScene extends Phaser.Scene {
     // Auto claim reward
     window.dispatchEvent(new CustomEvent('game:claim'))
 
+    // Brief overlay for clearing this wave — React listens for both
+    // "wave" and "final" outcomes and swaps the CTAs accordingly.
+    window.dispatchEvent(
+      new CustomEvent('battle:outcome', { detail: { status: 'wave-cleared', wave: this.wave } }),
+    )
+
     this.time.delayedCall(1500, () => {
       this.wave++
       if (this.wave > 7) {
@@ -973,6 +982,9 @@ export class BattleScene extends Phaser.Scene {
           isPlayerTurn: false,
           status: 'won',
         })
+        window.dispatchEvent(
+          new CustomEvent('battle:outcome', { detail: { status: 'won', wave: this.wave - 1 } }),
+        )
         return
       }
 
