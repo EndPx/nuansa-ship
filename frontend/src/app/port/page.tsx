@@ -84,6 +84,9 @@ export default function PortPage() {
             <h1 className="font-display text-2xl md:text-3xl text-[color:var(--ivory)] tracking-widest">
               PORT <span className="text-[color:var(--teal-glow)]">NUANSA</span>
             </h1>
+            <div className="font-hud text-[10px] tracking-[0.3em] text-[color:var(--brass)] mt-0.5">
+              CAPTAIN <span className="text-[color:var(--gold)]">{captainName.toUpperCase()}</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-6 font-hud text-sm text-[color:var(--teal-dim)]">
