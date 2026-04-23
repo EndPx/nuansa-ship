@@ -1,7 +1,19 @@
-# ⚓ Nuansa Ship
+<p align="center">
+  <img src="frontend/public/assets/ui/nuansa_logo_emblem.png" alt="Nuansa Ship" width="280" />
+</p>
 
-> **A tactical naval RPG on the Initia blockchain, inspired by Front Mission 4.**
-> Command a Captain, a Ship, and a Crew of three — all on‑chain NFTs — through grid‑based PvE battles where every move, attack, and skill is signed by your wallet.
+<p align="center">
+  <img src="frontend/public/assets/ui/nuansa_logo_wordmark.png" alt="NUANSA SHIP" width="420" />
+</p>
+
+<p align="center">
+  <strong>A tactical naval RPG on the Initia blockchain, inspired by Front Mission 4.</strong><br/>
+  Command a Captain, a Ship, and a Crew of three — all on-chain NFTs — through grid-based PvE battles where every move, attack, and skill is signed by your wallet.
+</p>
+
+---
+
+# ⚓ Nuansa Ship
 
 Part of the [Nuansa Universe](#-the-nuansa-universe) · Built for INITIATE Hackathon S1 · Next.js 15 · React 19 · Phaser 3 · Move VM
 

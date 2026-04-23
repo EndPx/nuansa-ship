@@ -11,5 +11,8 @@
   "native_feature": "auto-signing",
   "core_logic_path": "contracts/sources/battle.move",
   "native_feature_frontend_path": "frontend/src/hooks/useAutoSign.ts",
-  "demo_video_url": ""
+  "demo_video_url": "",
+  "logo_emblem_path": "frontend/public/assets/ui/nuansa_logo_emblem.png",
+  "logo_wordmark_path": "frontend/public/assets/ui/nuansa_logo_wordmark.png",
+  "logo_app_path": "frontend/public/assets/ui/nuansa_logo_app.png"
 }

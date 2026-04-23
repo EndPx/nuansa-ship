@@ -130,7 +130,21 @@ export function MintScreen() {
 
         {/* Parchment writ */}
         <div className="relative fade-up delay-1">
-          <div className="panel-parchment ink-wash p-8 md:p-10 relative">
+          <div className="panel-parchment ink-wash p-8 md:p-10 relative overflow-hidden">
+            {/* Faint emblem watermark stamped behind the parchment content */}
+            <img
+              src="/assets/ui/nuansa_logo_emblem.png"
+              alt=""
+              aria-hidden
+              width={360}
+              height={360}
+              className="absolute -bottom-10 -right-10 pointer-events-none select-none"
+              style={{
+                opacity: 0.09,
+                mixBlendMode: 'multiply',
+                filter: 'sepia(0.6) saturate(0.8)',
+              }}
+            />
             <WaxSeal className="absolute -top-4 -left-4 seal-press" />
             <WaxSeal className="absolute -top-4 -right-4 seal-press" />
             <WaxSeal className="absolute -bottom-4 -left-4 seal-press" />

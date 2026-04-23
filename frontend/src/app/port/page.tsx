@@ -159,8 +159,16 @@ export default function PortPage() {
       </div>
 
       {/* Bottom ticker */}
-      <footer className="mt-6 pt-4 border-t border-[color:var(--teal-dim)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex justify-between">
+      <footer className="mt-6 pt-4 border-t border-[color:var(--teal-dim)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex items-center justify-between gap-4">
         <span>◉ PORT.MOVE · SHIP.MOVE · CAPTAIN.MOVE · CREW.MOVE</span>
+        <img
+          src="/assets/ui/nuansa_logo_wordmark.png"
+          alt="Nuansa Ship"
+          width={120}
+          height={66}
+          className="opacity-60 hover:opacity-100 transition-opacity"
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+        />
         <span className="flex items-center gap-2">
           <span
             className="w-2 h-2 rounded-full animate-pulse"

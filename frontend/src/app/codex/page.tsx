@@ -67,7 +67,14 @@ export default function CodexPage() {
             <div className="absolute inset-0 flex items-center justify-center slow-rotate">
               <CompassWatermark size={520} opacity={0.25} tone="brass" rays={48} rings={5} />
             </div>
-            <AdmiraltySeal />
+            <img
+              src="/assets/ui/nuansa_logo_emblem.png"
+              alt="Nuansa Ship Admiralty Emblem"
+              width={420}
+              height={420}
+              className="relative drop-shadow-[0_0_32px_rgba(82,224,196,0.4)]"
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
           </div>
         </div>
       </section>

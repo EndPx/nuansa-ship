@@ -282,8 +282,16 @@ export default function BattlePage() {
       </div>
 
       {/* Bottom tactical strip */}
-      <footer className="relative mt-6 pt-3 border-t border-[color:var(--blood)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex justify-between">
+      <footer className="relative mt-6 pt-3 border-t border-[color:var(--blood)]/30 font-hud text-xs text-[color:var(--teal-dim)] flex items-center justify-between gap-4">
         <span>◉ BATTLE.MOVE · SESSION KEY ACTIVE ◊ AUTO-SIGN</span>
+        <img
+          src="/assets/ui/nuansa_logo_wordmark.png"
+          alt="Nuansa Ship"
+          width={110}
+          height={60}
+          className="opacity-55 hover:opacity-100 transition-opacity"
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+        />
         <span className="text-[color:var(--gold)]">
           ◊ CLICK TILE TO MOVE · RIGHT-CLICK ENEMY TO ATTACK
         </span>
