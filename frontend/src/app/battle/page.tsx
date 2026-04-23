@@ -37,6 +37,7 @@ export default function BattlePage() {
   const [chainReady, setChainReady] = useState(false)
   const [bootStatus, setBootStatus] = useState<string | null>('◇ Deploying fleet on-chain...')
   const [skillCd, setSkillCd] = useState(0)
+  const [turnAnnounce, setTurnAnnounce] = useState<{ key: number; turn: 'player' | 'enemy' } | null>(null)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
 
@@ -72,6 +73,7 @@ export default function BattlePage() {
     const onTurn = (e: Event) => {
       const next = (e as CustomEvent).detail?.turn as 'player' | 'enemy'
       setTurn(next)
+      setTurnAnnounce({ key: Date.now(), turn: next })
       // Toggle body class to escalate the global CRT / red vignette
       if (next === 'enemy') document.body.classList.add('enemy-turn')
       else document.body.classList.remove('enemy-turn')
@@ -123,6 +125,38 @@ export default function BattlePage() {
     <main className="relative min-h-screen px-4 py-6">
       {/* Global red-alert vignette (toggled by body.enemy-turn) */}
       <div className="red-vignette" aria-hidden />
+
+      {/* Turn announcement banner — slides across on every turn flip */}
+      {turnAnnounce && (
+        <div
+          key={turnAnnounce.key}
+          className="turn-announce fixed top-[38vh] left-0 right-0 z-[9996] pointer-events-none flex justify-center"
+          aria-live="polite"
+        >
+          <div
+            className="px-16 py-4 font-display tracking-[0.3em] text-4xl md:text-6xl"
+            style={{
+              color: turnAnnounce.turn === 'enemy' ? 'var(--blood)' : 'var(--teal-glow)',
+              background:
+                turnAnnounce.turn === 'enemy'
+                  ? 'linear-gradient(90deg, transparent 0%, rgba(230,57,70,0.85) 20%, rgba(230,57,70,0.85) 80%, transparent 100%)'
+                  : 'linear-gradient(90deg, transparent 0%, rgba(10,22,40,0.9) 20%, rgba(10,22,40,0.9) 80%, transparent 100%)',
+              borderTop: `1px solid ${turnAnnounce.turn === 'enemy' ? 'var(--blood)' : 'var(--teal-glow)'}`,
+              borderBottom: `1px solid ${turnAnnounce.turn === 'enemy' ? 'var(--blood)' : 'var(--teal-glow)'}`,
+              textShadow:
+                turnAnnounce.turn === 'enemy'
+                  ? '0 0 12px rgba(230,57,70,0.9)'
+                  : '0 0 12px rgba(82,224,196,0.8)',
+              boxShadow:
+                turnAnnounce.turn === 'enemy'
+                  ? '0 0 48px rgba(230,57,70,0.5)'
+                  : '0 0 48px rgba(82,224,196,0.4)',
+            }}
+          >
+            {turnAnnounce.turn === 'enemy' ? '◈ ENEMY TURN ◈' : '◉ YOUR TURN ◉'}
+          </div>
+        </div>
+      )}
 
       {/* Ambient rhumb watermark — tone flips to blood during enemy turn */}
       <div className="absolute inset-0 pointer-events-none">
