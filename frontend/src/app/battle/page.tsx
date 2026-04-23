@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { BattleLog } from '@/components/BattleLog'
 import { DamageFloater } from '@/components/DamageFloater'
 import { useBattle } from '@/hooks/useBattle'
+import { useInterwovenKit } from '@initia/interwovenkit-react'
 import {
   Panel,
   StatBar,
@@ -42,6 +43,13 @@ export default function BattlePage() {
   const [showHelp, setShowHelp] = useState(false)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
+  const kit = useInterwovenKit() as any
+  const bech32: string | undefined = kit.initiaAddress ?? kit.address
+  const captainName: string = kit.username
+    ? String(kit.username)
+    : bech32
+      ? `${bech32.slice(0, 6)}…${bech32.slice(-4)}`
+      : 'UNCOMMISSIONED'
 
   // Kick off the on-chain battle the moment /battle mounts so subsequent
   // move/attack/skill broadcasts don't abort with E_BATTLE_NOT_ACTIVE (0x6).
@@ -398,6 +406,9 @@ export default function BattlePage() {
             <h1 className="font-display text-2xl md:text-3xl text-[color:var(--ivory)] tracking-widest">
               NAVAL <span className="text-[color:var(--blood)] text-glow">BATTLE</span>
             </h1>
+            <div className="font-hud text-[10px] tracking-[0.3em] text-[color:var(--brass)] mt-0.5">
+              CAPTAIN <span className="text-[color:var(--gold)]">{captainName.toUpperCase()}</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-6">
