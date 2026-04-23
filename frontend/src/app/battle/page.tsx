@@ -557,7 +557,7 @@ export default function BattlePage() {
           alt="Nuansa Ship"
           width={110}
           height={60}
-          className="opacity-55 hover:opacity-100 transition-opacity"
+          className="opacity-55 hover:opacity-100 transition-opacity hidden md:block"
           style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
         />
         <span className="text-[color:var(--gold)]">

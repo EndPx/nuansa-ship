@@ -217,7 +217,7 @@ export default function PortPage() {
           alt="Nuansa Ship"
           width={120}
           height={66}
-          className="opacity-60 hover:opacity-100 transition-opacity"
+          className="opacity-60 hover:opacity-100 transition-opacity hidden md:block"
           style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
         />
         <span className="flex items-center gap-2">
