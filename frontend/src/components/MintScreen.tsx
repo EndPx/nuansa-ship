@@ -98,6 +98,19 @@ export function MintScreen() {
         </div>
       </div>
 
+      {/* Emblem watermark — sits behind the parchment writ, very low alpha
+          so it reads as "seal impressed on paper" not a full image */}
+      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <img
+          src="/assets/ui/nuansa_logo_emblem.png"
+          alt=""
+          width={560}
+          height={560}
+          className="opacity-[0.055]"
+          style={{ mixBlendMode: 'luminosity', filter: 'sepia(0.6)' }}
+        />
+      </div>
+
       {/* Top admiralty strip */}
       <div className="absolute top-0 inset-x-0 font-hud text-[10px] text-[color:var(--brass)] tracking-[0.5em] py-3 flex justify-between px-8 border-b border-[color:var(--brass)]/20 opacity-80">
         <span>◉ ADMIRALTY ARCHIVE · NUANSA-SHIP-1</span>
