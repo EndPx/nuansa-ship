@@ -77,6 +77,7 @@ export class BattleScene extends Phaser.Scene {
   // player turns. Decremented in endPlayerTurn.
   private skillCd: number = 0
   private skillCdBase: number = 2
+  private hoverOverlay!: Phaser.GameObjects.Graphics
 
   constructor() {
     super({ key: 'BattleScene' })
@@ -116,6 +117,33 @@ export class BattleScene extends Phaser.Scene {
       const hex = pixelToOffset(pointer.x, pointer.y)
       if (!hex) return
       this.handleTileClick(hex.col, hex.row)
+    })
+
+    // Hover outline — shows which hex the cursor is on when an action
+    // mode is active. Helps players target with confidence.
+    this.hoverOverlay = this.add.graphics()
+    this.hoverOverlay.setDepth(3)
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      this.hoverOverlay.clear()
+      if (!this.isPlayerTurn || !this.actionMode) return
+      const hex = pixelToOffset(pointer.x, pointer.y)
+      if (!hex) return
+      const { x, y } = offsetToPixel(hex.col, hex.row)
+      const verts = hexVertices(x, y, HEX_SIZE - 4)
+      const color =
+        this.actionMode === 'move'
+          ? 0x52e0c4
+          : this.actionMode === 'attack'
+            ? 0xe63946
+            : 0xf4a261
+      this.hoverOverlay.lineStyle(2, color, 0.9)
+      this.hoverOverlay.beginPath()
+      this.hoverOverlay.moveTo(verts[0][0], verts[0][1])
+      for (let i = 1; i < verts.length; i++) {
+        this.hoverOverlay.lineTo(verts[i][0], verts[i][1])
+      }
+      this.hoverOverlay.closePath()
+      this.hoverOverlay.strokePath()
     })
 
     // Listen for action mode changes from UIScene
