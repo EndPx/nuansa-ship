@@ -6,6 +6,7 @@ import { useFleet } from '@/hooks/useFleet'
 import { usePort } from '@/hooks/usePort'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useAutoSign } from '@/hooks/useAutoSign'
+import { useBattleStats } from '@/hooks/useBattleStats'
 import {
   Panel,
   StatBar,
@@ -32,6 +33,7 @@ export default function PortPage() {
   const fleet = useFleet(address || null)
   const port = usePort(address || null)
   const { startBattleSession, isEnabled: autoSignActive } = useAutoSign()
+  const { stats: battleStats } = useBattleStats(address || null)
 
   const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
   const captainName = username ?? (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—')
@@ -100,6 +102,37 @@ export default function PortPage() {
             <StatBar label="LEADERSHIP" current={fleet.captain?.leadership ?? 50} max={100} />
             <StatBar label="TACTICS" current={fleet.captain?.tactics ?? 50} max={100} />
             <StatBar label="XP / LVL" current={`${fleet.captain?.xp ?? 0} / LV ${fleet.captain?.level ?? 1}`} />
+            <div className="pt-2 mt-2 border-t border-[color:var(--teal-dim)]/20">
+              <div className="font-hud text-[10px] tracking-[0.3em] text-[color:var(--brass)] mb-1.5">
+                ◈ BATTLE RECORD
+              </div>
+              <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+                <div className="text-center">
+                  <div className="font-display text-lg text-[color:var(--teal-glow)] leading-none">
+                    {battleStats.wins}
+                  </div>
+                  <div className="text-[9px] tracking-[0.2em] text-[color:var(--teal-dim)] mt-0.5">
+                    WINS
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="font-display text-lg text-[color:var(--blood)] leading-none">
+                    {battleStats.losses}
+                  </div>
+                  <div className="text-[9px] tracking-[0.2em] text-[color:var(--teal-dim)] mt-0.5">
+                    LOSSES
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="font-display text-lg text-[color:var(--gold)] leading-none">
+                    {battleStats.highestWave}
+                  </div>
+                  <div className="text-[9px] tracking-[0.2em] text-[color:var(--teal-dim)] mt-0.5">
+                    HIGH WAVE
+                  </div>
+                </div>
+              </div>
+            </div>
           </Panel>
 
           <Panel iconSrc="/assets/ui/icon_navigator.png" title="FLAGSHIP">
