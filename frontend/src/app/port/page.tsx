@@ -84,6 +84,14 @@ export default function PortPage() {
       <header className="flex items-center justify-between mb-6 pb-4 border-b border-[color:var(--teal-dim)]/30">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-[color:var(--teal-glow)] animate-pulse" />
+          <img
+            src="/assets/ui/nuansa_logo_app.png"
+            alt="Nuansa Ship"
+            width={36}
+            height={36}
+            className="rounded-md"
+            style={{ filter: 'drop-shadow(0 0 6px rgba(82,224,196,0.4))' }}
+          />
           <div>
             <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--teal-dim)]">
               SECTOR / COMMAND

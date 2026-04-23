@@ -406,6 +406,18 @@ export default function BattlePage() {
             className="w-3 h-3 rounded-full animate-pulse"
             style={{ background: isEnemy ? 'var(--blood)' : 'var(--teal-glow)' }}
           />
+          <img
+            src="/assets/ui/nuansa_logo_app.png"
+            alt="Nuansa Ship"
+            width={36}
+            height={36}
+            className="rounded-md"
+            style={{
+              filter: isEnemy
+                ? 'drop-shadow(0 0 6px rgba(230,57,70,0.5))'
+                : 'drop-shadow(0 0 6px rgba(82,224,196,0.4))',
+            }}
+          />
           <div>
             <div className="font-hud text-xs tracking-[0.3em] text-[color:var(--blood)]">
               COMBAT SECTOR / ENGAGEMENT
