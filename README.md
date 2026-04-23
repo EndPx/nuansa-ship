@@ -35,11 +35,27 @@ Part of the [Nuansa Universe](#-the-nuansa-universe) · Built for INITIATE Hacka
 
 ---
 
+## ✨ Feature highlights (what shipped)
+
+- **On-chain from mint to victory.** `mint_starter_pack`, `upgrade_building`, `start_battle`, `submit_move`, `claim_reward` — all real TXes on `nuansa-ship-1`. Per-player NFT collections, PlayerProfile resource querying via REST, and a local dev faucet baked into the frontend (`/api/faucet`) auto-funds fresh wallets so they can mint.
+- **One Approve, zero modals during combat.** InterwovenKit session keys grant `/initia.move.v1.MsgExecute` on first /battle entry. Every subsequent move/attack/skill signs silently with `feeDenom: umin` + `autoSign: true`. A live "AUTO-SIGN: SESSION ACTIVE" chip confirms state in the Port footer.
+- **Hex grid tactical combat.** 10×7 flat-top hexes, cube-coord distance math, real movement + attack range highlights, live hex outline under the cursor when an action mode is armed. Enemy AI picks the neighbor hex minimizing distance-to-player.
+- **Skill cooldown system.** Broadside fires, goes on CD 2, ticks down each END TURN, button greys out + log narrates "recharging" when spammed.
+- **Full keyboard + help overlay.** `M` / `A` / `S` / `Space` / `Esc` for move/attack/skill/end-turn/cancel; `?` toggles a combat controls briefing.
+- **Victory / defeat / wave-cleared overlays.** Dedicated full-screen states after each battle outcome with RETURN TO PORT + SAIL AGAIN CTAs.
+- **Cinematic turn banners.** Every turn flip renders a skewed diagonal ribbon ("◉ YOUR TURN ◉" teal / "◈ ENEMY TURN ◈" blood) sliding across the canvas.
+- **Depth-cue animations.** Every ship has an elliptical drop-shadow, vertical idle bob, foam-wake particles on movement, muzzle flash (ADD blend) + recoil on attack, red-alert body vignette + CRT scanline boost during enemy turn, and a slow parallax sun-shine drifting across the water.
+- **Real pixel art, not AI slop.** Pixellab-generated via MCP: 3 top-down ships (player corvette / enemy galleon / boss dreadnought), 13 UI icons (anchor, cannonball, compass, wrench, lightning, chest, tower + 5 buildings + captain bust + muzzle flash), 2 hex tiles (water + reef), 1 dock plank tileable. Gemini-generated logo set: circular emblem, stacked wordmark, octagon app icon — all wired into favicon, OG tags, landing hero, archive mastheads, game footers, and a faint "seal on parchment" watermark behind the mint writ.
+- **Persistent battle record.** Per-wallet wins / losses / highest wave stashed in localStorage and surfaced in the FLEET DOSSIER panel at Port.
+- **Three-volume "Admiralty Archive".** Public lore pages at `/codex` / `/fleet` / `/almanac` with letterpress Cinzel + IM Fell English drop caps, parallax star field, and cross-linked chapter navigation — no wallet required, they serve as the marketing face.
+
+---
+
 ## 🎮 Gameplay at a glance
 
 1. **Commission your Captain.** Connect your wallet; a single TX mints a Captain + Corvette + Gunner + initializes your Port.
 2. **Manage your Port.** Upgrade 5 buildings (Shipyard, Armory, Barracks, Admiral's Hall, Warehouse) to unlock stronger ship classes and raise stats.
-3. **Set Sail into battle.** A 10×8 ocean grid. Player on the left, enemies on the right. Click‑to‑move, click‑to‑attack, click‑to‑cast skills. Auto‑signing means no popups mid‑turn.
+3. **Set Sail into battle.** A hex-grid ocean. Player on the left, enemies on the right. Click‑to‑move, click‑to‑attack, click‑to‑cast skills. Auto‑signing means no popups mid‑turn.
 4. **Clear the wave.** Loot rolls deterministically based on wave and block seed; Captain gains XP; injured crew must `rest_crew` before redeployment.
 5. **Scale up.** Wave 1–3 = skirmish, Wave 4–6 = multi‑enemy formations, Wave 7+ = boss with AoE.
 
