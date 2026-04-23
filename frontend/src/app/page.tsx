@@ -376,42 +376,5 @@ function FeatureCard({
   )
 }
 
-/* ─── Compass rose SVG ─────────────────────────────────────────────── */
-function CompassRose({ size = 160 }: { size?: number }) {
-  const s = size
-  const c = s / 2
-  return (
-    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`} className="drop-shadow-[0_0_12px_rgba(82,224,196,0.5)]">
-      <defs>
-        <radialGradient id="rose">
-          <stop offset="0%" stopColor="#52E0C4" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="#2A9D8F" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* Outer ring */}
-      <circle cx={c} cy={c} r={c - 4} fill="url(#rose)" stroke="#52E0C4" strokeWidth="1" opacity="0.7" />
-      <circle cx={c} cy={c} r={c - 20} fill="none" stroke="#2A9D8F" strokeWidth="0.5" opacity="0.5" />
-      {/* Cardinal */}
-      <g fill="#52E0C4" fontFamily="Cinzel, serif" fontSize={s * 0.08} fontWeight="700" textAnchor="middle" dominantBaseline="middle">
-        <text x={c} y={14}>N</text>
-        <text x={c} y={s - 14}>S</text>
-        <text x={s - 14} y={c}>E</text>
-        <text x={14} y={c}>W</text>
-      </g>
-      {/* Star points */}
-      <g fill="#52E0C4" opacity="0.85">
-        <polygon points={`${c},${c - (c - 30)} ${c + 6},${c} ${c},${c + (c - 30)} ${c - 6},${c}`} />
-        <polygon points={`${c - (c - 30)},${c} ${c},${c - 6} ${c + (c - 30)},${c} ${c},${c + 6}`} opacity="0.7" />
-      </g>
-      <g stroke="#C8A255" strokeWidth="1" opacity="0.6">
-        <line x1={c} y1={c} x2={c + (c - 36) * 0.707} y2={c - (c - 36) * 0.707} />
-        <line x1={c} y1={c} x2={c - (c - 36) * 0.707} y2={c + (c - 36) * 0.707} />
-        <line x1={c} y1={c} x2={c + (c - 36) * 0.707} y2={c + (c - 36) * 0.707} />
-        <line x1={c} y1={c} x2={c - (c - 36) * 0.707} y2={c - (c - 36) * 0.707} />
-      </g>
-      {/* Center */}
-      <circle cx={c} cy={c} r={5} fill="#F4A261" />
-      <circle cx={c} cy={c} r={2} fill="#0A1628" />
-    </svg>
-  )
-}
+/* CompassRose SVG removed — replaced everywhere by the pixellab/Gemini
+   emblem PNG. Kept in git history if we ever need the vector version. */
