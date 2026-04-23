@@ -50,34 +50,55 @@ export function BattleLog() {
     reward: '✦',
   }
 
+  const typeLabel: Record<string, string> = {
+    move:   'MOV',
+    attack: 'ATK',
+    skill:  'SKL',
+    enemy:  'ENM',
+    system: 'SYS',
+    reward: 'RWD',
+  }
+
   return (
     <div
       ref={logRef}
-      className="font-hud text-sm space-y-1 max-h-[440px] overflow-y-auto pr-1 leading-snug"
+      className="font-hud text-sm space-y-1.5 max-h-[440px] overflow-y-auto pr-1 leading-snug"
     >
-      {events.map((event) => (
-        <div key={event.id} className="flex gap-2 items-baseline">
-          <span
-            className="text-xs opacity-60 shrink-0"
-            style={{ color: 'var(--teal-dim)' }}
+      {events.map((event) => {
+        const color = typeColor[event.type] ?? 'var(--teal-glow)'
+        return (
+          <div
+            key={event.id}
+            className="flex gap-2 items-start pl-2 py-0.5 border-l-2 transition-colors hover:bg-[color:var(--teal-dim)]/5"
+            style={{ borderColor: color }}
           >
-            {new Date(event.timestamp).toTimeString().slice(0, 8)}
-          </span>
-          <span
-            className="shrink-0"
-            style={{ color: typeColor[event.type] ?? 'var(--teal-glow)' }}
-          >
-            {typeGlyph[event.type]}
-          </span>
-          <span
-            className="break-words"
-            style={{ color: typeColor[event.type] ?? 'var(--parchment)' }}
-          >
-            {event.message}
-          </span>
-        </div>
-      ))}
-      <div className="font-hud text-xs text-[color:var(--teal-dim)] cursor-blink mt-2">
+            <span
+              className="text-[10px] opacity-55 shrink-0 mt-0.5 tracking-wider"
+              style={{ color: 'var(--teal-dim)' }}
+            >
+              {new Date(event.timestamp).toTimeString().slice(0, 8)}
+            </span>
+            <span
+              className="shrink-0 flex items-center gap-1 text-[10px] tracking-[0.2em] mt-0.5 px-1.5 border"
+              style={{
+                color,
+                borderColor: `${color}55`,
+                background: `${color}10`,
+              }}
+            >
+              <span>{typeGlyph[event.type]}</span>
+              <span>{typeLabel[event.type] ?? 'LOG'}</span>
+            </span>
+            <span
+              className="break-words flex-1"
+              style={{ color: event.type === 'system' ? 'var(--parchment)' : color }}
+            >
+              {event.message}
+            </span>
+          </div>
+        )
+      })}
+      <div className="font-hud text-xs text-[color:var(--teal-dim)] cursor-blink mt-2 pl-2">
         &gt; awaiting
       </div>
     </div>
