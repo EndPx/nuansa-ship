@@ -25,11 +25,15 @@ export default function LandingPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-6">
-        <div className="compass-spin">
-          <CompassRose size={120} />
-        </div>
-        <p className="font-hud text-xl text-[color:var(--teal-glow)] text-glow">
-          [ SYNCHRONIZING WITH CHAIN... ]
+        <img
+          src="/assets/ui/nuansa_logo_emblem.png"
+          alt=""
+          width={180}
+          height={180}
+          className="slow-rotate drop-shadow-[0_0_24px_rgba(82,224,196,0.5)]"
+        />
+        <p className="font-hud text-xl text-[color:var(--teal-glow)] text-glow tracking-[0.3em] cursor-blink">
+          SYNCHRONIZING WITH CHAIN
         </p>
       </div>
     )
