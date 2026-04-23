@@ -118,6 +118,36 @@ export default function BattlePage() {
     window.dispatchEvent(new CustomEvent('ui:endTurn'))
   }
 
+  // Keyboard shortcuts: M=move, A=attack, S=skill, Space/Enter=end turn, Esc=cancel
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Skip when user is typing in an input
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea') return
+      if (turn !== 'player' || !chainReady) return
+      const k = e.key.toLowerCase()
+      if (k === 'm') {
+        e.preventDefault()
+        setAction('move')
+      } else if (k === 'a') {
+        e.preventDefault()
+        setAction('attack')
+      } else if (k === 's') {
+        if (skillCd > 0) return
+        e.preventDefault()
+        setAction('skill')
+      } else if (k === ' ' || e.key === 'Enter') {
+        e.preventDefault()
+        endTurn()
+      } else if (e.key === 'Escape') {
+        setActionMode(null)
+        window.dispatchEvent(new CustomEvent('ui:setAction', { detail: { mode: null } }))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [turn, chainReady, skillCd])
+
   const hpPct = Math.round((hp.current / hp.max) * 100)
   const isEnemy = turn === 'enemy'
 
@@ -276,7 +306,7 @@ export default function BattlePage() {
               onClick={() => setAction('move')}
               className={actionMode === 'move' ? 'ring-1 ring-[color:var(--teal-glow)]' : ''}
             >
-              ◇ MOVE
+              ◇ MOVE <KeyHint>M</KeyHint>
             </TacticalButton>
             <TacticalButton
               rail
@@ -285,7 +315,7 @@ export default function BattlePage() {
               onClick={() => setAction('attack')}
               className={actionMode === 'attack' ? 'ring-1 ring-[color:var(--blood)]' : ''}
             >
-              ⚔ ATTACK
+              ⚔ ATTACK <KeyHint>A</KeyHint>
             </TacticalButton>
             <TacticalButton
               rail
@@ -294,7 +324,7 @@ export default function BattlePage() {
               onClick={() => setAction('skill')}
               className={actionMode === 'skill' ? 'ring-1 ring-[color:var(--gold)]' : ''}
             >
-              ⚡ SKILL{skillCd > 0 ? ` · CD ${skillCd}` : ''}
+              ⚡ SKILL{skillCd > 0 ? ` · CD ${skillCd}` : ''} <KeyHint>S</KeyHint>
             </TacticalButton>
             <TacticalButton
               rail
@@ -302,7 +332,7 @@ export default function BattlePage() {
               disabled={turn !== 'player' || !chainReady}
               onClick={endTurn}
             >
-              ⏭ END TURN
+              ⏭ END TURN <KeyHint>␣</KeyHint>
             </TacticalButton>
           </div>
         </section>
@@ -382,5 +412,20 @@ function SkillSlot({ name, cd }: { name: string; cd: string }) {
         {cd}
       </span>
     </button>
+  )
+}
+
+function KeyHint({ children }: { children: React.ReactNode }) {
+  return (
+    <span
+      className="ml-1.5 inline-block px-1.5 py-[1px] font-mono text-[10px] tracking-normal border rounded-sm"
+      style={{
+        color: 'var(--teal-glow)',
+        borderColor: 'var(--teal-dim)',
+        background: 'rgba(8,19,32,0.6)',
+      }}
+    >
+      {children}
+    </span>
   )
 }
