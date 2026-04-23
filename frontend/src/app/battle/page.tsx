@@ -19,9 +19,16 @@ import {
 const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center w-[640px] h-[512px] box-console">
-      <div className="font-hud text-[color:var(--teal-glow)] text-xl">
-        [ DEPLOYING FLEET... ]
+    <div className="flex flex-col items-center justify-center gap-4 w-[640px] h-[512px] box-console">
+      <img
+        src="/assets/ui/nuansa_logo_emblem.png"
+        alt=""
+        width={160}
+        height={160}
+        className="slow-rotate drop-shadow-[0_0_20px_rgba(82,224,196,0.4)]"
+      />
+      <div className="font-hud text-[color:var(--teal-glow)] text-xl tracking-[0.3em] cursor-blink">
+        DEPLOYING FLEET
       </div>
     </div>
   ),
