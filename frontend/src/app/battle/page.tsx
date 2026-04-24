@@ -7,6 +7,7 @@ import { BattleLog } from '@/components/BattleLog'
 import { DamageFloater } from '@/components/DamageFloater'
 import { useBattle } from '@/hooks/useBattle'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
+import { useAutoSign } from '@/hooks/useAutoSign'
 import {
   Panel,
   StatBar,
@@ -50,6 +51,7 @@ export default function BattlePage() {
   const [showHelp, setShowHelp] = useState(false)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
   const { startBattle } = useBattle()
+  const { startBattleSession } = useAutoSign()
   const kit = useInterwovenKit() as any
   const bech32: string | undefined = kit.initiaAddress ?? kit.address
   const captainName: string = kit.username
@@ -60,10 +62,16 @@ export default function BattlePage() {
 
   // Kick off the on-chain battle the moment /battle mounts so subsequent
   // move/attack/skill broadcasts don't abort with E_BATTLE_NOT_ACTIVE (0x6).
+  // CRITICAL: enable the session key FIRST so start_battle itself signs
+  // silently. Otherwise the player sees a Confirm-tx modal on page entry.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
+        setBootStatus('◇ Requesting admiralty signet...')
+        await startBattleSession()
+        if (cancelled) return
+        setBootStatus('◇ Deploying fleet on-chain...')
         await startBattle(1)
         if (cancelled) return
         setChainReady(true)
@@ -83,7 +91,7 @@ export default function BattlePage() {
     return () => {
       cancelled = true
     }
-  }, [startBattle])
+  }, [startBattle, startBattleSession])
 
   // ── Wire Phaser → React events ────────────────────────────
   useEffect(() => {
