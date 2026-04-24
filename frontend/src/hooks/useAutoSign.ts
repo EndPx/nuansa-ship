@@ -23,9 +23,11 @@ export function useAutoSign() {
     if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
       return
     }
-    await (autoSign.enable as any)(NUANSA_CHAIN_ID, {
-      permissions: ['/initia.move.v1.MsgExecute'],
-    })
+    // Current InterwovenKit API: enable(chainId) only. Per-message
+    // permissions are declared at the Provider level via
+    // `enableAutoSign={{ [chainId]: [typeUrls] }}`, and the fee policy
+    // (allowed denoms, gas multiplier) via `autoSignFeePolicy`.
+    await autoSign.enable(NUANSA_CHAIN_ID)
   }
 
   const endBattleSession = async () => {

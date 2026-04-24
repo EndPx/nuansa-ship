@@ -76,14 +76,11 @@ export default function GameCanvas({ initialScene = 'PreloadScene' }: GameCanvas
         return
       }
       try {
-        // `autoSign: true` makes InterwovenKit sign without opening the
-        // confirm-tx modal when a session key for this chain is active.
-        // `feeDenom: 'umin'` avoids the fee-selection prompt. `chainId`
-        // is required so the kit routes to the right rollup.
+        // Silent signing is controlled by the provider-level
+        // enableAutoSign + autoSignFeePolicy config, not per-tx flags.
+        // Just pass chainId so the kit picks the right rollup.
         const hash = await requestTxSync({
           chainId: NUANSA_CHAIN_ID,
-          autoSign: true,
-          feeDenom: 'umin',
           messages,
         })
         console.log(`[${tag}] TX hash:`, hash)

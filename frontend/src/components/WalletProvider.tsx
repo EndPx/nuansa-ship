@@ -81,6 +81,13 @@ export function WalletProvider({ children }: PropsWithChildren) {
           enableAutoSign={{
             [NUANSA_CHAIN_ID]: ['/initia.move.v1.MsgExecute'],
           }}
+          autoSignFeePolicy={{
+            [NUANSA_CHAIN_ID]: {
+              allowedFeeDenoms: ['umin'],
+              gasMultiplier: 1.5,
+              maxGasMultiplierFromSim: 2.0,
+            },
+          }}
         >
           {children}
         </InterwovenKitProvider>

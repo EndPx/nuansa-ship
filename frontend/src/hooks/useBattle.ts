@@ -49,10 +49,10 @@ export function useBattle(): UseBattleResult {
         console.log(`[${tag}] would broadcast`, messages)
         return
       }
+      // Silent signing comes from the provider-level enableAutoSign +
+      // autoSignFeePolicy config; TxRequest only needs chainId + messages.
       const hash = await requestTxSync({
         chainId: NUANSA_CHAIN_ID,
-        autoSign: true,
-        feeDenom: 'umin',
         messages,
       })
       console.log(`[${tag}] TX hash:`, hash)
