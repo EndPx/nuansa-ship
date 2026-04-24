@@ -50,6 +50,7 @@ export default function BattlePage() {
   const [outcome, setOutcome] = useState<{ status: 'won' | 'lost' | 'wave-cleared'; wave: number } | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const canvasFrameRef = useRef<HTMLDivElement>(null)
+  const bootStartedRef = useRef(false)
   const { startBattle } = useBattle()
   const { startBattleSession } = useAutoSign()
   const kit = useInterwovenKit() as any
@@ -62,9 +63,15 @@ export default function BattlePage() {
 
   // Kick off the on-chain battle the moment /battle mounts so subsequent
   // move/attack/skill broadcasts don't abort with E_BATTLE_NOT_ACTIVE (0x6).
-  // CRITICAL: enable the session key FIRST so start_battle itself signs
-  // silently. Otherwise the player sees a Confirm-tx modal on page entry.
+  // CRITICAL: ref-gate this so it only runs ONCE per mount regardless of
+  // hook callback identity churn. Without the guard, if InterwovenKit
+  // re-renders the provider (e.g., session state flip), startBattleSession
+  // becomes a new function, the effect re-fires, and we broadcast another
+  // start_battle — which shows up as "the Confirm-tx modal keeps popping
+  // back the instant you Approve".
   useEffect(() => {
+    if (bootStartedRef.current) return
+    bootStartedRef.current = true
     let cancelled = false
     ;(async () => {
       try {
@@ -79,8 +86,6 @@ export default function BattlePage() {
         setTimeout(() => !cancelled && setBootStatus(null), 3000)
       } catch (e: any) {
         if (cancelled) return
-        // Start might fail if a battle is already active for this player —
-        // treat that as "ready to play" rather than a hard block.
         setChainReady(true)
         setBootStatus(
           `◈ Chain battle already in progress — resuming. (${String(e?.message ?? e).slice(0, 60)})`,
@@ -91,7 +96,8 @@ export default function BattlePage() {
     return () => {
       cancelled = true
     }
-  }, [startBattle, startBattleSession])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Wire Phaser → React events ────────────────────────────
   useEffect(() => {

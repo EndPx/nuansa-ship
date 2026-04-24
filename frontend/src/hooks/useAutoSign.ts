@@ -5,41 +5,41 @@
 // Once enabled, every in-battle `submit_move` / `claim_reward` TX signs
 // silently without a wallet popup, which is the whole point of session keys.
 
+import { useCallback } from 'react'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { NUANSA_CHAIN_ID } from '@/components/WalletProvider'
 
 export function useAutoSign() {
   const { autoSign, isConnected } = useInterwovenKit()
 
-  const startBattleSession = async () => {
+  // CRITICAL: wrap in useCallback with minimal, *primitive* deps. Returning
+  // a fresh arrow function on every render would make consumers' useEffects
+  // that depend on this callback re-fire indefinitely — which on /battle
+  // translates to "start_battle TX re-broadcast on every render → modal
+  // re-opens the instant it's dismissed".
+  const sessionEnabled = !!autoSign.isEnabledByChain[NUANSA_CHAIN_ID]
+
+  const startBattleSession = useCallback(async () => {
     if (!isConnected) {
       throw new Error('Wallet not connected')
     }
-    // If a session is already live for this chain, trust it — all our
-    // grants go through this same hook which always passes permissions,
-    // so a pre-existing grant is already permissioned correctly. This
-    // avoids a second Approve modal when /battle mounts right after
-    // the Port "Set Sail" button already provisioned the session.
-    if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
-      return
-    }
+    if (sessionEnabled) return
     // Current InterwovenKit API: enable(chainId) only. Per-message
-    // permissions are declared at the Provider level via
-    // `enableAutoSign={{ [chainId]: [typeUrls] }}`, and the fee policy
-    // (allowed denoms, gas multiplier) via `autoSignFeePolicy`.
+    // permissions come from the Provider-level enableAutoSign prop,
+    // and the fee policy (denoms, gas multiplier) from autoSignFeePolicy.
     await autoSign.enable(NUANSA_CHAIN_ID)
-  }
+  }, [isConnected, sessionEnabled, autoSign])
 
-  const endBattleSession = async () => {
-    if (autoSign.isEnabledByChain[NUANSA_CHAIN_ID]) {
+  const endBattleSession = useCallback(async () => {
+    if (sessionEnabled) {
       await autoSign.disable(NUANSA_CHAIN_ID)
     }
-  }
+  }, [sessionEnabled, autoSign])
 
   return {
     startBattleSession,
     endBattleSession,
-    isEnabled: !!autoSign.isEnabledByChain[NUANSA_CHAIN_ID],
+    isEnabled: sessionEnabled,
     expiresAt: autoSign.expiredAtByChain[NUANSA_CHAIN_ID] ?? null,
     isLoading: autoSign.isLoading,
   }
