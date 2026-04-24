@@ -192,11 +192,11 @@ export default function PortPage() {
         {/* ───── Right: Resources + buildings ───── */}
         <aside className="space-y-4 fade-up delay-2">
           <Panel iconSrc="/assets/ui/icon_chest.png" title="INVENTORY">
-            <Resource icon="▬" label="Iron Planks" amount={port.inventory?.items?.find(i => i.itemType === 0)?.amount ?? 4} />
-            <Resource icon="◆" label="Steel Parts" amount={port.inventory?.items?.find(i => i.itemType === 1)?.amount ?? 2} />
-            <Resource icon="●" label="Provisions" amount={port.inventory?.items?.find(i => i.itemType === 2)?.amount ?? 6} />
-            <Resource icon="✦" label="Commander Tome" amount={port.inventory?.items?.find(i => i.itemType === 3)?.amount ?? 0} />
-            <Resource icon="▲" label="Timber" amount={port.inventory?.items?.find(i => i.itemType === 4)?.amount ?? 3} />
+            <Resource iconSrc="/assets/ui/res_iron.png" label="Iron Planks" amount={port.inventory?.items?.find(i => i.itemType === 0)?.amount ?? 4} />
+            <Resource iconSrc="/assets/ui/res_steel.png" label="Steel Parts" amount={port.inventory?.items?.find(i => i.itemType === 1)?.amount ?? 2} />
+            <Resource iconSrc="/assets/ui/res_provisions.png" label="Provisions" amount={port.inventory?.items?.find(i => i.itemType === 2)?.amount ?? 6} />
+            <Resource iconSrc="/assets/ui/res_tome.png" label="Commander Tome" amount={port.inventory?.items?.find(i => i.itemType === 3)?.amount ?? 0} />
+            <Resource iconSrc="/assets/ui/res_timber.png" label="Timber" amount={port.inventory?.items?.find(i => i.itemType === 4)?.amount ?? 3} />
           </Panel>
 
           <Panel iconSrc="/assets/ui/icon_tower.png" title="FACILITIES">
@@ -263,11 +263,18 @@ function DossierRow({
   )
 }
 
-function Resource({ icon, label, amount }: { icon: string; label: string; amount: number }) {
+function Resource({ iconSrc, label, amount }: { iconSrc: string; label: string; amount: number }) {
   return (
     <div className="flex items-center justify-between font-mono text-sm border-b border-[color:var(--teal-dim)]/20 pb-1 last:border-0">
       <div className="flex items-center gap-2">
-        <span className="text-[color:var(--gold)] text-lg leading-none">{icon}</span>
+        <img
+          src={iconSrc}
+          alt=""
+          width={22}
+          height={22}
+          className="pixelated"
+          style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+        />
         <span className="text-[color:var(--parchment)]">{label}</span>
       </div>
       <span className="font-hud text-base text-[color:var(--teal-glow)]">

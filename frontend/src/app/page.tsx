@@ -203,18 +203,62 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
           />
         </div>
 
-        {/* Tagline */}
-        <div className="mt-8 text-center fade-up delay-2">
-          <p className="font-hud text-xl md:text-2xl text-[color:var(--brass)] tracking-[0.4em]">
-            ✦ CAPTAIN · SHIP · CREW ✦
-          </p>
-          <p className="mt-2 font-mono text-xs md:text-sm text-[color:var(--teal-dim)] tracking-widest uppercase">
+        {/* Tagline — text overlaid on pixel-art scroll */}
+        <div className="mt-8 text-center fade-up delay-2 relative w-full max-w-xl">
+          <div className="relative">
+            <img
+              src="/assets/ui/scroll_banner.png"
+              alt=""
+              width={520}
+              height={130}
+              className="mx-auto w-full max-w-lg h-auto drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]"
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="font-display text-lg md:text-2xl text-[#3a1f0a] tracking-[0.25em] font-bold">
+                CAPTAIN · SHIP · CREW
+              </p>
+            </div>
+          </div>
+          <p className="mt-3 font-mono text-xs md:text-sm text-[color:var(--teal-dim)] tracking-widest uppercase">
             Tactical naval warfare on Initia
           </p>
         </div>
 
-        {/* Typewriter terminal */}
-        <div className="mt-12 w-full max-w-xl fade-up delay-3">
+        {/* Typewriter terminal — framed with pixel-art corner filigrees */}
+        <div className="mt-12 w-full max-w-xl fade-up delay-3 relative">
+          {/* Four brass filigree corners */}
+          <img
+            src="/assets/ui/corner_filigree.png"
+            alt=""
+            width={44}
+            height={44}
+            className="absolute -top-4 -left-4 pixelated z-10"
+          />
+          <img
+            src="/assets/ui/corner_filigree.png"
+            alt=""
+            width={44}
+            height={44}
+            className="absolute -top-4 -right-4 pixelated z-10"
+            style={{ transform: 'scaleX(-1)' }}
+          />
+          <img
+            src="/assets/ui/corner_filigree.png"
+            alt=""
+            width={44}
+            height={44}
+            className="absolute -bottom-4 -left-4 pixelated z-10"
+            style={{ transform: 'scaleY(-1)' }}
+          />
+          <img
+            src="/assets/ui/corner_filigree.png"
+            alt=""
+            width={44}
+            height={44}
+            className="absolute -bottom-4 -right-4 pixelated z-10"
+            style={{ transform: 'scale(-1,-1)' }}
+          />
           <div className="box-console px-6 py-4 font-hud text-base md:text-lg text-[color:var(--teal-glow)] min-h-[140px]">
             {lines.map((l, i) => (
               <div key={i} className="leading-tight">
@@ -257,6 +301,49 @@ function LandingCinematic({ onConnect }: { onConnect: () => void }) {
           </p>
         </div>
       </section>
+
+      {/* Hero harbor panorama — cinematic glimpse between hero and features */}
+      <section className="relative z-10 px-0 pt-4 pb-8">
+        <div className="mx-auto max-w-6xl relative">
+          <div
+            className="relative overflow-hidden border-y border-[color:var(--brass)]/30"
+            style={{
+              boxShadow:
+                'inset 0 40px 80px rgba(5,12,24,0.9), inset 0 -40px 80px rgba(5,12,24,0.9)',
+            }}
+          >
+            <img
+              src="/assets/ui/hero_harbor.png"
+              alt="A cinematic dawn harbor with warships at anchor"
+              width={1200}
+              height={720}
+              className="w-full h-auto pixelated"
+              style={{
+                maskImage:
+                  'linear-gradient(180deg, transparent 0%, black 10%, black 90%, transparent 100%)',
+              }}
+            />
+            {/* Tagline over scene */}
+            <div className="absolute inset-x-0 top-4 text-center font-hud text-xs tracking-[0.5em] text-[color:var(--brass)]">
+              ✦ PORT NUANSA · DAWN LIGHT ✦
+            </div>
+            <div className="absolute inset-x-0 bottom-4 text-center font-im-fell italic text-sm md:text-base text-[color:var(--parchment)]/90" style={{ fontFamily: '"IM Fell English", serif' }}>
+              « Every sail carries a contract, every contract a captain. »
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Divider rule between hero scene and feature tape */}
+      <div className="relative z-10 flex justify-center py-2">
+        <img
+          src="/assets/ui/divider_rule.png"
+          alt=""
+          width={480}
+          height={40}
+          className="pixelated opacity-80"
+        />
+      </div>
 
       {/* Feature tape — primitives at a glance */}
       <section className="relative z-10 px-6 md:px-16 py-20 border-t border-[color:var(--brass)]/15">
