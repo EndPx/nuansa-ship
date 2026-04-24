@@ -66,24 +66,12 @@ export class PortScene extends Phaser.Scene {
     bg.fillStyle(0x1a2a3e, 0.9)
     bg.fillRect(24, 80, CANVAS_WIDTH - 48, CANVAS_HEIGHT - 160)
 
-    // Richer dock texture via a tiled pixellab plank pattern.
-    // add.tileSprite repeats the texture across a rect without seam fuss.
-    if (this.textures.exists('dock-plank')) {
-      const dockW = CANVAS_WIDTH - 48
-      const dockH = CANVAS_HEIGHT - 160
-      const dock = this.add.tileSprite(
-        24 + dockW / 2,
-        80 + dockH / 2,
-        dockW,
-        dockH,
-        'dock-plank',
-      )
-      dock.setTileScale(0.7, 0.7)
-      dock.setAlpha(0.55)
-      dock.setBlendMode(Phaser.BlendModes.MULTIPLY)
-    }
+    // (Previously tried to tile dock_plank.png across the dock area with
+    // Phaser.tileSprite, but that texture has round transparent corners so
+    // the repeat showed as visible circles. Flat navy fill + plank joint
+    // lines + rivet dots reads much cleaner.)
 
-    // Subtle plank joint lines on top of the texture
+    // Subtle plank joint lines on top of the base fill
     bg.lineStyle(1, 0x8b6914, 0.22)
     for (let y = 88; y < CANVAS_HEIGHT - 80; y += 20) {
       bg.lineBetween(24, y, CANVAS_WIDTH - 24, y)
