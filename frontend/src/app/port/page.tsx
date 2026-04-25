@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useFleet } from '@/hooks/useFleet'
 import { usePort } from '@/hooks/usePort'
 import { useProfile } from '@/hooks/useProfile'
+import { useEffect, useState } from 'react'
+import { UpgradePanel } from '@/components/UpgradePanel'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useAutoSign } from '@/hooks/useAutoSign'
 import { useBattleStats } from '@/hooks/useBattleStats'
@@ -43,6 +45,34 @@ export default function PortPage() {
   const { startBattleSession, isEnabled: autoSignActive } = useAutoSign()
   const { stats: battleStats } = useBattleStats(address || null)
   const { captainName: chainCaptainName } = useProfile(address || null)
+
+  // Selected building for the UpgradePanel modal. null = closed.
+  const [selectedBuilding, setSelectedBuilding] = useState<
+    | { type: number; name: string; level: number }
+    | null
+  >(null)
+
+  // Listen to PortScene's building-click events
+  useEffect(() => {
+    const onClick = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      if (!d) return
+      const lvls = [
+        port.port?.shipyardLevel ?? 0,
+        port.port?.armoryLevel ?? 0,
+        port.port?.barracksLevel ?? 0,
+        port.port?.admiralsHallLevel ?? 0,
+        port.port?.warehouseLevel ?? 0,
+      ]
+      setSelectedBuilding({
+        type: d.buildingType,
+        name: d.buildingName,
+        level: lvls[d.buildingType] ?? 0,
+      })
+    }
+    window.addEventListener('port:building-click', onClick)
+    return () => window.removeEventListener('port:building-click', onClick)
+  }, [port.port])
 
   const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
   // Resolution order: on-chain captain_token_id (the name they typed at
@@ -242,6 +272,16 @@ export default function PortPage() {
           </span>
         </span>
       </footer>
+
+      {/* Upgrade modal — opens when PortScene emits port:building-click */}
+      {selectedBuilding && (
+        <UpgradePanel
+          buildingType={selectedBuilding.type}
+          buildingName={selectedBuilding.name}
+          currentLevel={selectedBuilding.level}
+          onClose={() => setSelectedBuilding(null)}
+        />
+      )}
     </main>
   )
 }

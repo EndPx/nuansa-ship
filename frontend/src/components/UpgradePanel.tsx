@@ -98,8 +98,17 @@ export function UpgradePanel({ buildingType, buildingName, currentLevel, onClose
         setError('Contracts not deployed yet — simulated upgrade')
         return
       }
-      const res = await requestTxBlock({ messages })
+      const res = await requestTxBlock({
+        chainId: 'nuansa-ship-1',
+        messages,
+      })
       console.log('Upgrade TX hash:', res.transactionHash)
+      // Notify usePort so the dossier refreshes immediately
+      window.dispatchEvent(
+        new CustomEvent('chain:confirmed', {
+          detail: { tag: `upgrade:${buildingType}`, hash: res.transactionHash },
+        }),
+      )
       onClose()
     } catch (err: any) {
       console.error('Upgrade failed:', err)
