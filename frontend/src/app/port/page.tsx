@@ -199,11 +199,11 @@ export default function PortPage() {
         {/* ───── Right: Resources + buildings ───── */}
         <aside className="space-y-4 fade-up delay-2">
           <Panel iconSrc="/assets/ui/icon_chest.png" title="INVENTORY">
-            <Resource iconSrc="/assets/ui/res_iron.png" label="Iron Planks" amount={port.inventory?.items?.find(i => i.itemType === 0)?.amount ?? 4} />
-            <Resource iconSrc="/assets/ui/res_steel.png" label="Steel Parts" amount={port.inventory?.items?.find(i => i.itemType === 1)?.amount ?? 2} />
-            <Resource iconSrc="/assets/ui/res_provisions.png" label="Provisions" amount={port.inventory?.items?.find(i => i.itemType === 2)?.amount ?? 6} />
-            <Resource iconSrc="/assets/ui/res_tome.png" label="Commander Tome" amount={port.inventory?.items?.find(i => i.itemType === 3)?.amount ?? 0} />
-            <Resource iconSrc="/assets/ui/res_timber.png" label="Timber" amount={port.inventory?.items?.find(i => i.itemType === 4)?.amount ?? 3} />
+            <Resource iconSrc="/assets/ui/res_iron.png" label="Iron Planks" amount={resourceCount(port.inventory, 0)} />
+            <Resource iconSrc="/assets/ui/res_steel.png" label="Steel Parts" amount={resourceCount(port.inventory, 1)} />
+            <Resource iconSrc="/assets/ui/res_provisions.png" label="Provisions" amount={resourceCount(port.inventory, 2)} />
+            <Resource iconSrc="/assets/ui/res_tome.png" label="Commander Tome" amount={resourceCount(port.inventory, 3)} />
+            <Resource iconSrc="/assets/ui/res_timber.png" label="Timber" amount={resourceCount(port.inventory, 4)} />
           </Panel>
 
           <Panel iconSrc="/assets/ui/icon_tower.png" title="FACILITIES">
@@ -267,6 +267,20 @@ function DossierRow({
         {value}
       </span>
     </div>
+  )
+}
+
+// Sum every entry of the given itemType in the inventory. Defends against
+// the chain returning multiple ledger rows of the same resource type
+// (e.g. two separate "Iron Planks ×2" drops not yet coalesced).
+function resourceCount(
+  inventory: { items?: Array<{ itemType: number; amount: number }> } | null | undefined,
+  itemType: number,
+): number {
+  if (!inventory?.items) return 0
+  return inventory.items.reduce(
+    (sum, it) => (it.itemType === itemType ? sum + (Number(it.amount) || 0) : sum),
+    0,
   )
 }
 
