@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { useFleet } from '@/hooks/useFleet'
 import { usePort } from '@/hooks/usePort'
+import { useProfile } from '@/hooks/useProfile'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useAutoSign } from '@/hooks/useAutoSign'
 import { useBattleStats } from '@/hooks/useBattleStats'
@@ -41,9 +42,15 @@ export default function PortPage() {
   const port = usePort(address || null)
   const { startBattleSession, isEnabled: autoSignActive } = useAutoSign()
   const { stats: battleStats } = useBattleStats(address || null)
+  const { captainName: chainCaptainName } = useProfile(address || null)
 
   const shipClasses = ['Corvette', 'Frigate', 'Destroyer', 'Battleship']
-  const captainName = username ?? (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—')
+  // Resolution order: on-chain captain_token_id (the name they typed at
+  // mint) > Initia username > shortened bech32 > em-dash fallback.
+  const captainName =
+    chainCaptainName ??
+    username ??
+    (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—')
   const shipClassName = fleet.ship ? shipClasses[fleet.ship.shipClass] ?? 'Corvette' : 'Corvette'
 
   const handleSetSail = async () => {

@@ -8,6 +8,7 @@ import { DamageFloater } from '@/components/DamageFloater'
 import { useBattle } from '@/hooks/useBattle'
 import { useInterwovenKit } from '@initia/interwovenkit-react'
 import { useAutoSign } from '@/hooks/useAutoSign'
+import { useProfile } from '@/hooks/useProfile'
 import {
   Panel,
   StatBar,
@@ -55,11 +56,16 @@ export default function BattlePage() {
   const { startBattleSession } = useAutoSign()
   const kit = useInterwovenKit() as any
   const bech32: string | undefined = kit.initiaAddress ?? kit.address
-  const captainName: string = kit.username
-    ? String(kit.username)
-    : bech32
-      ? `${bech32.slice(0, 6)}…${bech32.slice(-4)}`
-      : 'UNCOMMISSIONED'
+  const { captainName: chainCaptainName } = useProfile(bech32 ?? null)
+  // Resolution: on-chain captain_token_id (mint name) > Initia username
+  // > shortened bech32 > generic fallback
+  const captainName: string =
+    chainCaptainName ??
+    (kit.username
+      ? String(kit.username)
+      : bech32
+        ? `${bech32.slice(0, 6)}…${bech32.slice(-4)}`
+        : 'UNCOMMISSIONED')
 
   // Kick off the on-chain battle the moment /battle mounts so subsequent
   // move/attack/skill broadcasts don't abort with E_BATTLE_NOT_ACTIVE (0x6).

@@ -7,6 +7,12 @@ import { CONTRACT_ADDRESS } from '@/lib/contracts'
 
 interface UseProfileResult {
   hasProfile: boolean
+  /** Captain name the player chose at mint — from PlayerProfile.captain_token_id */
+  captainName: string | null
+  /** Player's flagship NFT id — from PlayerProfile.ship_token_id */
+  shipTokenId: string | null
+  /** Crew NFT ids — from PlayerProfile.crew_token_ids */
+  crewTokenIds: string[]
   isLoading: boolean
   error: string | null
   refresh: () => Promise<void>
@@ -21,15 +27,20 @@ const REST = 'http://localhost:1317'
 
 export function useProfile(address: string | null): UseProfileResult {
   const [hasProfile, setHasProfile] = useState(false)
+  const [captainName, setCaptainName] = useState<string | null>(null)
+  const [shipTokenId, setShipTokenId] = useState<string | null>(null)
+  const [crewTokenIds, setCrewTokenIds] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     if (!address) {
       setHasProfile(false)
+      setCaptainName(null)
+      setShipTokenId(null)
+      setCrewTokenIds([])
       return
     }
-    // If contract hasn't been deployed yet, always show MintScreen
     if (!CONTRACT_ADDRESS) {
       setHasProfile(false)
       return
@@ -41,13 +52,40 @@ export function useProfile(address: string | null): UseProfileResult {
         STRUCT_TAG,
       )}`
       const res = await fetch(url)
-      // 200 with a `resource` field = profile exists
-      // 404 / 400 / any other = doesn't exist yet
-      if (res.ok) {
-        const j = await res.json()
-        setHasProfile(Boolean(j?.resource ?? j?.data ?? j?.type))
-      } else {
+      if (!res.ok) {
         setHasProfile(false)
+        setCaptainName(null)
+        setShipTokenId(null)
+        setCrewTokenIds([])
+        return
+      }
+      const j = await res.json()
+      // Resource payload comes back as { resource: { type, move_resource: "..." } }
+      // where move_resource is a JSON string with the struct fields. Parse it.
+      const moveResourceRaw =
+        j?.resource?.move_resource ?? j?.move_resource ?? null
+      if (moveResourceRaw) {
+        let parsed: any = null
+        try {
+          parsed = typeof moveResourceRaw === 'string'
+            ? JSON.parse(moveResourceRaw)
+            : moveResourceRaw
+        } catch {
+          parsed = null
+        }
+        // Accept either flat fields or nested under .data
+        const data = parsed?.data ?? parsed ?? {}
+        const cap = data.captain_token_id ?? null
+        const ship = data.ship_token_id ?? null
+        const crew = Array.isArray(data.crew_token_ids) ? data.crew_token_ids : []
+        setHasProfile(true)
+        setCaptainName(typeof cap === 'string' && cap.length > 0 ? cap : null)
+        setShipTokenId(typeof ship === 'string' && ship.length > 0 ? ship : null)
+        setCrewTokenIds(crew.filter((s: any) => typeof s === 'string'))
+      } else {
+        // Resource exists but in unexpected shape — treat as profile present
+        // without details so the gate still opens to /port.
+        setHasProfile(Boolean(j?.resource ?? j?.data ?? j?.type))
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check profile')
@@ -61,5 +99,5 @@ export function useProfile(address: string | null): UseProfileResult {
     refresh()
   }, [refresh])
 
-  return { hasProfile, isLoading, error, refresh }
+  return { hasProfile, captainName, shipTokenId, crewTokenIds, isLoading, error, refresh }
 }
